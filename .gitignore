@@ -1,0 +1,23 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# IDE
+.idea/
+.jbeval/
+
+# Local secrets picked up by __main__.py
+.env
+
+# Demo / test artefacts
+output/
+
+# example output
+examples/output/
