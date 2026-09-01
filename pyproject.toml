@@ -1,0 +1,206 @@
+[project]
+name = "docx-redline"
+description = "Production-grade Word tracked changes (redlines) for .docx files"
+readme = "README.md"
+license = "MPL-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+# Single-sourced from docx_redline/__init__.py -- see [tool.hatch.version].
+dynamic = ["version"]
+authors = [{ name = "Aswanth", email = "aswanth.babu@outlook.com" }]
+keywords = [
+    "docx",
+    "word",
+    "ooxml",
+    "redline",
+    "tracked-changes",
+    "revisions",
+    "contracts",
+    "python-docx",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Legal Industry",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Office/Business",
+    "Topic :: Text Processing :: Markup :: XML",
+    "Typing :: Typed",
+]
+dependencies = [
+    "lxml>=6.1.2",
+    "python-docx>=1.2.0",
+    "python-dotenv>=1.2.3",
+]
+
+[project.optional-dependencies]
+# Only needed for `--reviewer claude` / `--reviewer openai`. Both SDKs are
+# imported lazily inside the reviewers, so the core install stays offline and
+# the default rule-based reviewer needs neither.
+llm = [
+    "anthropic>=0.40",
+    "openai>=3.3.0",
+]
+
+[project.scripts]
+docx-redline = "docx_redline.cli:_entry"
+# Same command under the module spelling, so `uv run docx_redline ...` works
+# alongside `uv run docx-redline ...` and `python -m docx_redline ...`.
+docx_redline = "docx_redline.cli:_entry"
+
+[dependency-groups]
+# `uv sync` must give a venv that can run the whole suite: tests/test_reviewers.py
+# exercises the Claude and OpenAI plumbing, so it needs their SDKs. Referencing
+# the extra rather than restating the pins keeps one source of truth.
+dev = [
+    "docx-redline[llm]",
+    "isort>=9.0.1",
+    "mypy>=2.3.1",
+    "pre-commit>=4.6.2",
+    "pyflakes>=3.4.0",
+    "pytest>=9.1.1",
+    "ruff>=0.16.5",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+# One definition of the version, in the package itself, so an install and
+# `docx_redline.__version__` can never disagree.
+path = "docx_redline/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+# The four subpackages come along with it; hatchling recurses.
+packages = ["docx_redline"]
+
+[tool.hatch.build.targets.sdist]
+# Ship what someone needs to verify the library: the package, the suite that
+# proves it, the worked example, and the docs the README links to.
+include = [
+    "docx_redline",
+    "tests",
+    "examples",
+    "docs",
+    "README.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "pyproject.toml",
+]
+exclude = [
+    "examples/output",
+    "**/__pycache__",
+    "**/*.pyc",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+# ---------------------------------------------------------------------------
+# code quality
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["examples/output"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort -- import ordering, enforced here rather than by a second tool
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "SIM",  # flake8-simplify
+    "RET",  # flake8-return
+    "PTH",  # prefer pathlib
+    "RUF",  # ruff's own
+]
+ignore = [
+    # This library exists to edit legal prose. Smart quotes, en dashes and
+    # non-breaking spaces are the *subject matter* -- `fold()` is built to
+    # normalise exactly these -- so flagging them as ambiguous is noise.
+    "RUF001", "RUF002", "RUF003",
+    # `open()` and `os.path` are fine where the surrounding code already uses them.
+    "PTH123",
+    # A trailing `else` after `return` often reads better in the branchy
+    # planner code than the flattened form.
+    "RET505",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# conftest and the examples put the repo on sys.path before importing from it.
+"tests/conftest.py" = ["E402"]
+"examples/*.py" = ["E402"]
+# The public API module is a re-export surface: unused imports are the point.
+"docx_redline/__init__.py" = ["F401"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["docx_redline"]
+combine-as-imports = true
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.isort]
+# Ruff's `I` rules are the source of truth; this block exists so a standalone
+# `isort` run agrees with them byte for byte instead of fighting over the file.
+profile = "black"
+line_length = 100
+known_first_party = ["docx_redline"]
+combine_as_imports = true
+skip_glob = ["examples/output/*"]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["docx_redline"]
+namespace_packages = true
+explicit_package_bases = true
+# lxml and python-docx ship partial or no stubs; typing their internals is not
+# this project's job, so calls into them are untyped rather than errors.
+ignore_missing_imports = true
+follow_imports = "normal"
+# The floor, enforced everywhere today.
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+strict_equality = true
+check_untyped_defs = true
+
+# ---------------------------------------------------------------------------
+# The floor above is enforced everywhere. These three modules are exempted from
+# specific codes, each for a stated reason -- not blanket-silenced -- so a new
+# error of any other kind still fails the build. Narrowing these is the next
+# step, not a permanent state.
+# ---------------------------------------------------------------------------
+[[tool.mypy.overrides]]
+# Both SDKs return dynamically-shaped response objects, and the reviewers reach
+# through them defensively. Typing those would mean vendoring their stubs.
+module = "docx_redline.planning.agent"
+disable_error_code = ["union-attr", "attr-defined", "arg-type", "assignment", "index"]
+
+[[tool.mypy.overrides]]
+# `Reviewer` is a Protocol declaring only `propose`; `emit` and `client` exist
+# on the concrete reviewers. Widening the Protocol is the real fix.
+module = ["docx_redline.cli", "docx_redline.planning.chunked"]
+disable_error_code = ["attr-defined", "union-attr"]
+
+[[tool.mypy.overrides]]
+# A clause label is `str | None` while a clause is being constructed and `str`
+# once it is in the tree; the narrowing is real but not yet expressed.
+module = [
+    "docx_redline.structure.clauses",
+    "docx_redline.structure.segments",
+    "docx_redline.planning.actions",
+    "docx_redline.planning.pipeline",
+]
+disable_error_code = ["arg-type", "index", "misc", "assignment"]

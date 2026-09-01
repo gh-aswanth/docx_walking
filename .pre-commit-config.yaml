@@ -1,0 +1,82 @@
+# Every hook here is also runnable by hand:
+#     uv run ruff check --fix .      uv run ruff format .
+#     uv run isort .                 uv run mypy
+#     uv lock --check
+#
+#     uv run pre-commit install        # wire it into `git commit`
+#     uv run pre-commit run --all-files
+default_language_version:
+  python: python3.12
+
+repos:
+  # --- the basics: whitespace, syntax, and files that should not be committed
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^examples/output/
+      - id: end-of-file-fixer
+        exclude: ^examples/output/
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=2048]
+      - id: debug-statements
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  # --- ruff: lint (including import order, rule set "I") then format
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.5
+    hooks:
+      - id: ruff-check
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+
+  # --- isort: configured in pyproject to agree with ruff's I rules byte for
+  #     byte, so this is a second opinion rather than a competing formatter
+  - repo: https://github.com/PyCQA/isort
+    rev: 7.0.0
+    hooks:
+      - id: isort
+        args: [--check-only, --diff]
+
+  # --- mypy: run against the installed environment, not an isolated one, so it
+  #     sees lxml and python-docx the way the package does
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: uv run mypy
+        language: system
+        types: [python]
+        pass_filenames: false
+        require_serial: true
+
+  # --- uv: the lock must match pyproject, and the project must still build
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.9.9
+    hooks:
+      - id: uv-lock
+      - id: uv-export
+        args: [--frozen, --no-dev, --output-file=requirements.txt]
+
+  # --- the suite and the examples are the real gate
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: uv run pytest -q
+        language: system
+        types: [python]
+        pass_filenames: false
+        require_serial: true
+      - id: examples
+        name: examples run clean
+        entry: uv run python examples/run_all.py
+        language: system
+        types: [python]
+        pass_filenames: false
+        require_serial: true
