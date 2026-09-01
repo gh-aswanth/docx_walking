@@ -8,15 +8,15 @@
 
 ```mermaid
 flowchart TB
-    S1["<b>extract</b><br/><i>parse into a clause tree + block walk</i>"]
-    S2["<b>propose</b><br/><i>a reviewer, a JSON file, or inline items</i>"]
-    S3["<b>validate</b><br/><i>schema-check before the document is opened</i>"]
-    S4["<b>compare</b><br/><i>diff a second .docx in — optional</i>"]
-    S5["<b>plan</b><br/><i>content → structural → annotations</i>"]
-    S6["<b>renumber</b><br/><i>labels + cross-references, once</i>"]
-    S7["<b>apply</b><br/><i>count what was written</i>"]
-    S8["<b>verify</b><br/><i>accept ⇄ reject round trip</i>"]
-    S9["<b>report</b><br/><i>docx + JSON</i>"]
+    S1["<b>extract</b><br/>parse into a clause tree + block walk"]
+    S2["<b>propose</b><br/>a reviewer, a JSON file, or inline items"]
+    S3["<b>validate</b><br/>schema-check before the document is opened"]
+    S4["<b>compare</b><br/>diff a second .docx in — optional"]
+    S5["<b>plan</b><br/>content → structural → annotations"]
+    S6["<b>renumber</b><br/>labels + cross-references, once"]
+    S7["<b>apply</b><br/>count what was written"]
+    S8["<b>verify</b><br/>accept ⇄ reject round trip"]
+    S9["<b>report</b><br/>docx + JSON"]
 
     S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7 --> S8 --> S9
 
@@ -131,9 +131,9 @@ anchored on the paragraph it actually touched.
 
 ```mermaid
 flowchart LR
-    ITEM["action item<br/><i>rationale + severity</i>"] --> APPLIED{"applied?"}
+    ITEM["action item<br/>rationale + severity"] --> APPLIED{"applied?"}
     APPLIED -->|no| SKIP["not annotated"]
-    APPLIED -->|yes| ANCHOR["find a live paragraph<br/><i>visible runs preferred;<br/>a strikeout still counts</i>"]
+    APPLIED -->|yes| ANCHOR["find a live paragraph<br/>visible runs preferred;<br/>a strikeout still counts"]
     ANCHOR --> CMT["<b>[AI-011 · medium]</b><br/>Governing law belongs with…"]
 
     style CMT fill:#e6f4ea,stroke:#34a853
