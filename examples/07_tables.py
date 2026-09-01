@@ -60,4 +60,14 @@ cell = rl.tables()[0].rows[1].cells[0]
 ops = rl.set_cell_text(cell, "Name (please print)")
 print(f"  {ops} diff op(s):", [(r.kind, r.text) for r in rl.summary().revisions])
 
+section("all of it on one document — this is what gets saved")
+# Each section above starts from a clean copy so it demonstrates one thing.
+# The saved file applies them together, so the artefact matches the example.
+rl = fresh()
+rl.insert_table_row(rl.tables()[0], values=["Countersigned by", "Date"])
+rl.set_cell_text(rl.tables()[0].rows[1].cells[0], "Name (please print)")
+rl.delete_table_row(rl.tables()[1], 1)
+print("  kinds:", sorted({r.kind for r in rl.summary().revisions}))
+print("  table 0 now:", cells(rl.tables()[0]))
+
 save(rl, "07_tables.docx")

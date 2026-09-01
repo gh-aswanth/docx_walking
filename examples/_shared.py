@@ -7,8 +7,20 @@ Every example is standalone: run it directly, or run them all with
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
+
+# These examples print the characters this library exists to normalise: smart
+# quotes, en dashes, U+2212 MINUS. A Windows console defaults stdout to cp1252,
+# which cannot encode them, so an example would die on its own output rather
+# than on anything to do with redlining. Ask for UTF-8 explicitly.
+for stream in (sys.stdout, sys.stderr):
+    if hasattr(stream, "reconfigure"):
+        stream.reconfigure(encoding="utf-8")
+
+#: Environment for any example that shells out, so the child agrees.
+CHILD_ENV = {**os.environ, "PYTHONIOENCODING": "utf-8"}
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))

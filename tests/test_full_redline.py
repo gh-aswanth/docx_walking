@@ -227,7 +227,7 @@ def test_full_run_rejects_back_to_the_original(combined, agreement_bytes):
 
 def test_full_run_writes_a_report(combined, tmp_path):
     _result, _ = combined
-    payload = json.loads((tmp_path / "report.json").read_text())
+    payload = json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))
     assert payload["ok"] is True
     assert payload["compare"]["paragraphs_changed"] >= 2
     assert payload["plan"]["summary"]["clauses_renumbered"] >= 2
@@ -366,7 +366,7 @@ def test_actions_as_a_list(tmp_path, agreement):
 
 def test_actions_as_a_path_object(tmp_path, agreement):
     path = tmp_path / "plan.json"
-    path.write_text(json.dumps({"action_items": [MOVE]}))
+    path.write_text(json.dumps({"action_items": [MOVE]}), encoding="utf-8")
     result = full_redline(agreement, tmp_path / "out.docx", actions=path, date=DATE)
     assert result.ok and result.proposal.source == "file"
 
@@ -374,7 +374,7 @@ def test_actions_as_a_path_object(tmp_path, agreement):
 def test_actions_as_a_bare_list_file(tmp_path, agreement):
     """A plan file may be a bare JSON array, not just {"action_items": [...]}."""
     path = tmp_path / "plan.json"
-    path.write_text(json.dumps([MOVE]))
+    path.write_text(json.dumps([MOVE]), encoding="utf-8")
     result = full_redline(agreement, tmp_path / "out.docx", actions=str(path), date=DATE)
     assert result.ok and result.plan.applied == 1
 
@@ -386,7 +386,7 @@ def test_actions_file_is_never_rewritten(tmp_path, agreement):
     original = json.dumps({"action_items": [MOVE]}, indent=4)
     path.write_text(original)
     full_redline(agreement, tmp_path / "out.docx", actions=path, date=DATE)
-    assert path.read_text() == original
+    assert path.read_text(encoding="utf-8") == original
 
 
 def test_supplied_actions_win_over_a_reviewer(tmp_path, agreement):
@@ -419,7 +419,7 @@ def run_cli(*argv) -> int:
 
 def test_cli_full_with_a_plan_file(tmp_path, agreement, capsys):
     plan = tmp_path / "plan.json"
-    plan.write_text(json.dumps({"action_items": [MOVE]}))
+    plan.write_text(json.dumps({"action_items": [MOVE]}), encoding="utf-8")
     out = tmp_path / "out.docx"
     assert run_cli("full", agreement, "-o", out, "--actions", plan, "--date", DATE) == 0
     assert out.exists()
@@ -468,7 +468,7 @@ def test_cli_full_combines_every_source(tmp_path, agreement, revised):
         DATE,
     )
     assert code == 0
-    payload = json.loads(report.read_text())
+    payload = json.loads(report.read_text(encoding="utf-8"))
     assert payload["ok"] is True
     assert payload["compare"]["paragraphs_changed"] >= 1
     assert sorted(review_texts(out)) == ["Confirm the payment window.", "Counterparty wording."]
@@ -538,7 +538,7 @@ DEMO_PLAN = PLAN
 def demo_items():
     if not DEMO_PLAN.exists():
         pytest.skip(f"{DEMO_PLAN.name} not present")
-    return json.loads(DEMO_PLAN.read_text())["action_items"]
+    return json.loads(DEMO_PLAN.read_text(encoding="utf-8"))["action_items"]
 
 
 def test_demo_plan_covers_every_action_type(demo_items):
@@ -741,6 +741,6 @@ def test_rationale_survives_renumbering(tmp_path, agreement):
 def test_report_carries_the_rationale_too(tmp_path, agreement):
     report = tmp_path / "report.json"
     full_redline(agreement, tmp_path / "out.docx", actions=EXPLAINED, date=DATE, report_path=report)
-    actions = json.loads(report.read_text())["plan"]["actions"]
+    actions = json.loads(report.read_text(encoding="utf-8"))["plan"]["actions"]
     assert actions[0]["rationale"] == "Standard 45-day cycle."
     assert actions[0]["severity"] == "high"

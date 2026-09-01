@@ -115,11 +115,11 @@ result = full_redline(
     report_path=OUT / "20_report.json",
     actions_path=OUT / "20_actions.json",
 )
-report = json.loads((OUT / "20_report.json").read_text())
+report = json.loads((OUT / "20_report.json").read_text(encoding="utf-8"))
 print("  report keys :", list(report))
 print(
     "  actions.json:",
-    len(json.loads((OUT / "20_actions.json").read_text())["action_items"]),
+    len(json.loads((OUT / "20_actions.json").read_text(encoding="utf-8"))["action_items"]),
     "items",
 )
 print(

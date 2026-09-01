@@ -13,7 +13,7 @@ import json
 import subprocess
 import sys
 
-from _shared import OUT, PLAN, ROOT, SOURCE, banner, section
+from _shared import CHILD_ENV, OUT, PLAN, ROOT, SOURCE, banner, section
 
 banner("25 · CLI")
 PY = sys.executable
@@ -26,7 +26,12 @@ def short(arg):
 
 def run(*args, expect=0, show=4):
     proc = subprocess.run(
-        [PY, "-m", "docx_redline", *map(str, args)], cwd=ROOT, capture_output=True, text=True
+        [PY, "-m", "docx_redline", *map(str, args)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env=CHILD_ENV,
     )
     tag = "ok " if proc.returncode == expect else "!! "
     print(f"  {tag}exit={proc.returncode}  docx-redline {' '.join(short(a) for a in args)[:86]}")
@@ -146,11 +151,14 @@ ops_plan.write_text(
             ]
         },
         indent=2,
-    )
+    ),
+    encoding="utf-8",
 )
 run("apply", SOURCE, ops_plan, "-o", OUT / "25_apply.docx", "--author", "Ops")
 bad_ops = OUT / "25_ops_bad.json"
-bad_ops.write_text(json.dumps([{"op": "replace_text", "old": "nope", "new": "x"}]))
+bad_ops.write_text(
+    json.dumps([{"op": "replace_text", "old": "nope", "new": "x"}]), encoding="utf-8"
+)
 run("apply", SOURCE, bad_ops, "-o", OUT / "25_apply_lenient.docx", "--lenient")
 
 section("accept / reject")
@@ -174,7 +182,7 @@ print("       (skipped here: it makes a real API call)")
 
 section("exit codes")
 broken = OUT / "25_broken.json"
-broken.write_text(json.dumps([{"op": "replace_txt", "old": "a", "new": "b"}]))
+broken.write_text(json.dumps([{"op": "replace_txt", "old": "a", "new": "b"}]), encoding="utf-8")
 run("validate", broken, expect=1)  # validate reports problems -> 1
 run("apply", SOURCE, broken, "-o", OUT / "25_never.docx", expect=2)  # bad input -> 2
 print("  0 = success, 1 = a stage or check failed, 2 = bad input")

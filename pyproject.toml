@@ -43,8 +43,8 @@ dependencies = [
 # imported lazily inside the reviewers, so the core install stays offline and
 # the default rule-based reviewer needs neither.
 llm = [
-    "anthropic>=0.40",
-    "openai>=3.3.0",
+    "anthropic>=1.2.0",
+    "openai>=3.6.0",
 ]
 
 [project.scripts]
@@ -112,6 +112,9 @@ target-version = "py312"
 extend-exclude = ["examples/output"]
 
 [tool.ruff.lint]
+# PLW1514 is a preview rule; nothing else here depends on preview.
+preview = true
+explicit-preview-rules = true
 select = [
     "E",    # pycodestyle errors
     "W",    # pycodestyle warnings
@@ -124,6 +127,11 @@ select = [
     "RET",  # flake8-return
     "PTH",  # prefer pathlib
     "RUF",  # ruff's own
+    # Text IO without an explicit encoding uses the *locale* codec. On Windows
+    # that is cp1252, which decodes UTF-8 smart quotes into mojibake without
+    # raising -- silent corruption in a library whose whole subject is quoted
+    # legal prose. This rule is why that cannot come back.
+    "PLW1514",
 ]
 ignore = [
     # This library exists to edit legal prose. Smart quotes, en dashes and

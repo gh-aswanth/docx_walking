@@ -476,7 +476,7 @@ def test_the_merge_report_reaches_the_json_report(tmp_path, agreement):
     )
     report = tmp_path / "report.json"
     full_redline(agreement, tmp_path / "out.docx", reviewer=reviewer, date=DATE, report_path=report)
-    payload = json.loads(report.read_text())
+    payload = json.loads(report.read_text(encoding="utf-8"))
     assert payload["proposal"]["usage"]["calls"] >= 1
 
 

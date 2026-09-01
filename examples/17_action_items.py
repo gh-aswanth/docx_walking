@@ -120,7 +120,7 @@ print("  summary:", json.dumps(run.to_dict()["summary"]))
 print("  keys   :", list(run.to_dict()))
 
 section("the committed plan file — 29 items, every action type")
-items = json.loads(PLAN.read_text())["action_items"]
+items = json.loads(PLAN.read_text(encoding="utf-8"))["action_items"]
 rl = fresh()
 big = apply_actions(rl, items, explain=True)
 print(" ", big.format().replace("\n", "\n  "))

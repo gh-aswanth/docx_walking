@@ -229,7 +229,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _load_plan(path: str) -> list[dict]:
-    data = json.loads(Path(path).read_text())
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
     if isinstance(data, dict):
         return data.get("operations", [])
     return data
@@ -391,7 +391,7 @@ def _collect_comments(flags: list[str], path: str | None) -> list[dict]:
     """``CLAUSE=TEXT`` / ``find=PHRASE=TEXT`` flags plus an optional JSON file."""
     comments: list[dict] = []
     if path:
-        loaded = json.loads(Path(path).read_text())
+        loaded = json.loads(Path(path).read_text(encoding="utf-8"))
         comments.extend(loaded if isinstance(loaded, list) else loaded.get("comments", []))
     for raw in flags:
         target, sep, text = raw.partition("=")
@@ -504,7 +504,9 @@ def main(argv: list[str] | None = None) -> int:
         if merge:
             print("  " + _format_merge(merge))
             if args.merge_report:
-                Path(args.merge_report).write_text(json.dumps(merge, indent=2) + "\n")
+                Path(args.merge_report).write_text(
+                    json.dumps(merge, indent=2) + "\n", encoding="utf-8"
+                )
                 print(f"  merge report -> {args.merge_report}")
         print(result.plan.format())
         for change in result.plan.renumbered:

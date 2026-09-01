@@ -131,4 +131,14 @@ print(
     [rl.text_of(p)[:8] for p in rl.find_paragraphs(regex=r"^2\.\d")],
 )
 
+section("the saved file keeps the cascade as tracked changes")
+# The section above accepts, which is the point it is making -- but an accepted
+# document has no revisions left to look at. Save the move instead, unresolved,
+# so the artefact shows the cascade a reviewer would actually open.
+rl = fresh()
+apply_actions(
+    rl, [{"id": "AI-012", "type": "move_clause", "clause": "12.1", "after_clause": "4.1"}]
+)
+print("  kinds:", sorted({r.kind for r in rl.summary().revisions}))
+
 save(rl, "19_renumbering.docx")

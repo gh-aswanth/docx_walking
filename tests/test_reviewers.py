@@ -11,6 +11,14 @@ import json
 import httpx
 import pytest
 
+# anthropic >= 1.0 moved off httpx onto httpx2 and rejects an `httpx.Client`
+# outright ("Expected an instance of `httpx2.Client`"). The two have the same
+# surface, so resolve whichever the installed SDK wants and mock through that.
+try:  # pragma: no cover - depends on the installed anthropic
+    import httpx2 as anthropic_httpx
+except ImportError:  # pragma: no cover
+    anthropic_httpx = httpx
+
 from docx_redline.planning.actions import ACTION_SCHEMA, validate_actions
 from docx_redline.planning.agent import (
     ACTION_FIELDS,
@@ -308,7 +316,8 @@ def claude_client(handler):
     import anthropic
 
     return anthropic.Anthropic(
-        api_key="sk-ant-test", http_client=httpx.Client(transport=httpx.MockTransport(handler))
+        api_key="sk-ant-test",
+        http_client=anthropic_httpx.Client(transport=anthropic_httpx.MockTransport(handler)),
     )
 
 
@@ -414,11 +423,11 @@ def claude_capture():
     seen = {}
 
     def make(payload=None):
-        def handler(request: httpx.Request) -> httpx.Response:
+        def handler(request: anthropic_httpx.Request) -> anthropic_httpx.Response:
             seen["url"] = str(request.url)
             seen["beta"] = request.headers.get("anthropic-beta")
             seen["body"] = json.loads(request.content)
-            return httpx.Response(
+            return anthropic_httpx.Response(
                 200,
                 headers={"content-type": "text/event-stream"},
                 content=payload if payload is not None else claude_stream(TOOL_BLOCK),

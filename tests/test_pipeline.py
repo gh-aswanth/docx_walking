@@ -521,7 +521,7 @@ def test_pipeline_end_to_end(tmp_path, agreement):
     assert output.exists() and report.exists() and actions.exists()
     assert all(passed for _, passed, _ in result.checks)
 
-    payload = json.loads(report.read_text())
+    payload = json.loads(report.read_text(encoding="utf-8"))
     assert payload["ok"] is True
     assert payload.get("summary", True)
     assert payload["plan"]["summary"]["actions"] >= 1
