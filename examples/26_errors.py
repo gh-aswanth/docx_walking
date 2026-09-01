@@ -7,7 +7,7 @@ RedlineError              base: an edit could not be located or applied
 """
 
 import docx
-from _shared import SOURCE, banner, fresh, section
+from _shared import OUT, SOURCE, banner, fresh, section
 
 from docx_redline import (
     ClauseError,
@@ -68,7 +68,8 @@ raises(
     "an action plan that fails its schema check",
     lambda: apply_actions(fresh(), [{"id": "X", "type": "renumber_clause", "clause": "3.1"}]),
 )
-raises("full_redline with nothing to do", lambda: full_redline(SOURCE, "/dev/null"))
+# the output path is never written -- the call raises before it gets that far
+raises("full_redline with nothing to do", lambda: full_redline(SOURCE, OUT / "never.docx"))
 
 section("ClauseError — a clause number that does not resolve")
 tree = ClauseTree(docx.Document(SOURCE).element.body)

@@ -1,0 +1,13 @@
+# Normalise text to LF in the repository; check out native on Windows.
+* text=auto eol=lf
+
+# Word documents are zip archives. Line-ending conversion corrupts them, and a
+# corrupted fixture fails the suite on Windows in a way that looks like a bug
+# in the library.
+*.docx binary
+*.doc  binary
+*.zip  binary
+
+# Generated -- don't count it in language stats or show it in diffs by default.
+uv.lock          linguist-generated=true -diff
+requirements.txt linguist-generated=true -diff

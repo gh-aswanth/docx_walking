@@ -1,0 +1,132 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  # Called by release.yml so a publish runs this exact gate rather than a copy
+  # of it that can drift.
+  workflow_call:
+
+# A new push supersedes the run it interrupted; nothing is learned by finishing
+# a check against code that has already moved on.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Reproducible resolution: CI must fail on lockfile drift, never silently
+  # resolve something different from what a developer has locally.
+  UV_FROZEN: "1"
+
+jobs:
+  quality:
+    name: lint · format · types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - run: uv sync --locked
+
+      # Each step is the same command the pre-commit hook runs, so a green
+      # local commit cannot be a red CI run.
+      - name: ruff check
+        run: uv run ruff check --output-format=github .
+      - name: ruff format
+        run: uv run ruff format --check --diff .
+      - name: isort
+        run: uv run isort --check-only --diff .
+      - name: mypy
+        run: uv run mypy
+
+  test:
+    name: tests · py${{ matrix.python }} · ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+          python-version: ${{ matrix.python }}
+      - run: uv sync --locked
+
+      - name: pytest
+        run: uv run pytest -q
+
+      # The examples are executable documentation: one that stops running is a
+      # README that has started lying.
+      - name: examples
+        run: uv run python examples/run_all.py
+
+  build:
+    name: build · install · smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: build wheel and sdist
+        run: uv build
+
+      - name: metadata is well formed
+        run: uvx twine check --strict dist/*
+
+      # Prove the wheel stands on its own: a fresh interpreter, only the
+      # declared dependencies, and no repo on sys.path.
+      - name: install the wheel into a clean environment
+        run: |
+          uv venv /tmp/clean
+          uv pip install --python /tmp/clean/bin/python dist/*.whl
+
+      - name: the installed package works
+        run: |
+          cd /tmp
+          /tmp/clean/bin/docx-redline --version
+          /tmp/clean/bin/python -m docx_redline --version
+          /tmp/clean/bin/python - <<'PY'
+          from docx_redline import ParagraphIndex, RedlineEdit, Redliner
+          import importlib.metadata as md
+          meta = md.metadata("docx-redline")
+          assert meta["License-Expression"] == "MPL-2.0", meta["License-Expression"]
+          src = "${{ github.workspace }}/examples/data/Sample_Software_License_Agreement.docx"
+          rl = Redliner(src, author="CI")
+          index = ParagraphIndex(rl)
+          report = index.apply([RedlineEdit(19, "thirty (30) days", "forty-five (45) days")])
+          assert len(report.applied) == 1, report.summary()
+          print("wheel smoke test ok:", len(index), "paragraphs,", meta["License-Expression"])
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 14
+
+  hooks:
+    name: pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - run: uv sync --locked
+      - name: every hook, on every file
+        run: uv run pre-commit run --all-files --show-diff-on-failure

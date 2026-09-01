@@ -1,5 +1,10 @@
 # docx-redline
 
+[![CI](https://github.com/OWNER/docx-redline/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/docx-redline/actions/workflows/ci.yml)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/downloads/)
+[![License: MPL 2.0](https://img.shields.io/badge/license-MPL--2.0-brightgreen)](LICENSE)
+
+
 Production-grade **tracked changes (redlines)** for `.docx`, built on
 [python-docx](https://python-docx.readthedocs.io) + `lxml`.
 

@@ -43,6 +43,12 @@ sides come out ahead of a fork nobody can see.
 
    That runs ruff (lint + format), isort, mypy, `uv lock --check`, the 350-test
    suite, and all 26 examples. All of it must pass.
+
+   CI runs the same commands, so a green commit locally cannot be a red run on
+   the PR. On top of that it tests **Python 3.12 and 3.13 on Linux, macOS and
+   Windows**, builds the wheel and sdist, and installs the wheel into a clean
+   environment to prove it stands on its own. Nothing is published that has not
+   passed all of it -- `release.yml` calls `ci.yml` rather than restating it.
 4. **Examples stay honest.** `examples/` is executable documentation. If you
    change an option, update the example that demonstrates it —
    `python examples/run_all.py` fails the build if one stops running.
