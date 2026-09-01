@@ -58,7 +58,7 @@ flowchart LR
 ```
 
 Rewriting the whole paragraph as one delete + one insert is valid but
-unreadable. `diffing.py` tokenises on word boundaries, and coalesces edits
+unreadable. `oxml/diffing.py` tokenises on word boundaries, and coalesces edits
 separated by only a space or two so a single change reads as one revision.
 
 ---
@@ -120,8 +120,8 @@ flowchart TB
 
 | | |
 |---|---|
-| `compare.py` | `compare_documents`, `compare_into`, `redline_files` |
-| `diffing.py` | `diff_ops` — the word-level diff |
-| `pipeline.py` | how a compare composes with an action plan |
+| `editing/compare.py` | `compare_documents`, `compare_into`, `redline_files` |
+| `oxml/diffing.py` | `diff_ops` — the word-level diff |
+| `planning/pipeline.py` | how a compare composes with an action plan |
 
 **Next:** [Failure modes →](09-failure-modes.md)

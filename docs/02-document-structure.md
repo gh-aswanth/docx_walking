@@ -154,8 +154,8 @@ truncates on it.
 
 | | |
 |---|---|
-| `segments.py` | `detect_strategy`, `iter_blocks`, `render_document`, `segment_document` |
-| `clauses.py` | `ClauseTree`, `render_outline` (the *summary* view) |
-| `actions.py` | `_require_unique` — the ambiguity guard |
+| `structure/segments.py` | `detect_strategy`, `iter_blocks`, `render_document`, `segment_document` |
+| `structure/clauses.py` | `ClauseTree`, `render_outline` (the *summary* view) |
+| `planning/actions.py` | `_require_unique` — the ambiguity guard |
 
 **Next:** [Clause renumbering →](03-clause-renumbering.md)

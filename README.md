@@ -102,7 +102,7 @@ the limitation noted below.
 
 ## How it works
 
-Nine short documents in [`docs/`](docs/), one per workflow, each built around a
+Ten short documents in [`docs/`](docs/), one per workflow, each built around a
 diagram:
 
 | | | |
@@ -110,6 +110,7 @@ diagram:
 | [1 · Tracked changes](docs/01-tracked-changes.md) | [2 · Document structure](docs/02-document-structure.md) | [3 · Clause renumbering](docs/03-clause-renumbering.md) |
 | [4 · The action pipeline](docs/04-action-pipeline.md) | [5 · Chunked review](docs/05-chunked-review.md) | [6 · Merge & reconciliation](docs/06-merge-reconciliation.md) |
 | [7 · Verification](docs/07-verification.md) | [8 · Document compare](docs/08-document-compare.md) | [9 · Failure modes](docs/09-failure-modes.md) |
+| [10 · Paragraph addressing](docs/10-paragraph-addressing.md) | | |
 
 Start with the [index](docs/README.md) for the system-level picture.
 
@@ -494,7 +495,7 @@ serialises the whole run.
 whole document and then applied **right to left**, so no applied edit
 invalidates a pending offset. Review notes are the exception: they are anchors,
 not rewrites, so they are validated up front but re-located against the
-*finished* text and applied last — the same order `actions.py` uses, and for the
+*finished* text and applied last — the same order `planning/actions.py` uses, and for the
 same reason. A note whose words an edit just struck falls back to the whole
 paragraph and records why.
 
@@ -1029,7 +1030,7 @@ raise — an empty result would read as a clean bill of health.
 **The merge is adversarial towards its own input**, because independent segments
 produce colliding ids and contradictory intentions, and applying the raw union
 does not fail loudly — it reports `applied` on everything and hands back a
-document that is quietly wrong. `merge.py` re-ids, drops what a segment had no
+document that is quietly wrong. `planning/merge.py` re-ids, drops what a segment had no
 business proposing, resolves each contested target to one winner, and resolves
 every clause number and quote against the *untouched* document before the
 planner opens it. Everything discarded is recorded with a reason in

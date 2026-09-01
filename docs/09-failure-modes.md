@@ -18,7 +18,7 @@ flowchart LR
     style BAD fill:#fce8e6,stroke:#ea4335
 ```
 
-Nearly all the work in `merge.py` and the guards in `actions.py` exist to move
+Nearly all the work in `planning/merge.py` and the guards in `planning/actions.py` exist to move
 things from the bottom row to the top.
 
 ---
@@ -183,9 +183,9 @@ flowchart TB
 
 | | |
 |---|---|
-| `merge.py` | pre-flight, conflict rules, the report |
-| `actions.py` | `_require_unique`, the delete guard, `_assert_no_clause_vanished` |
-| `pipeline.py` | `verify` and the seven checks |
+| `planning/merge.py` | pre-flight, conflict rules, the report |
+| `planning/actions.py` | `_require_unique`, the delete guard, `_assert_no_clause_vanished` |
+| `planning/pipeline.py` | `verify` and the seven checks |
 | `tests/test_merge.py` | one test per failure above |
 
 **Back to:** [index](README.md)

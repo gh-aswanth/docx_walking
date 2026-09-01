@@ -251,8 +251,8 @@ full_redline(src, out, reviewer=ChunkedReviewer("claude", segment_tokens=25_000)
 
 | | |
 |---|---|
-| `chunked.py` | `ChunkedReviewer`, `build_index`, `SegmentCache`, triage floors |
-| `segments.py` | `segment_document`, `DocSegment.split` |
-| `agent.py` | `emit()` — the shared transport both providers use |
+| `planning/chunked.py` | `ChunkedReviewer`, `build_index`, `SegmentCache`, triage floors |
+| `structure/segments.py` | `segment_document`, `DocSegment.split` |
+| `planning/agent.py` | `emit()` — the shared transport both providers use |
 
 **Next:** [Merge & reconciliation →](06-merge-reconciliation.md)

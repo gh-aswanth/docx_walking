@@ -195,8 +195,8 @@ Exit codes: `0` all checks passed · `1` a stage or check failed · `2` bad inpu
 
 | | |
 |---|---|
-| `pipeline.py` | `RedlinePipeline`, `full_redline`, the stage methods |
-| `actions.py` | `ACTION_SCHEMA`, `validate_actions`, `ActionPlanner` |
-| `agent.py` | reviewers and the action-item schema |
+| `planning/pipeline.py` | `RedlinePipeline`, `full_redline`, the stage methods |
+| `planning/actions.py` | `ACTION_SCHEMA`, `validate_actions`, `ActionPlanner` |
+| `planning/agent.py` | reviewers and the action-item schema |
 
 **Next:** [Chunked review →](05-chunked-review.md)

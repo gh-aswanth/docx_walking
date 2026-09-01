@@ -114,24 +114,28 @@ flowchart LR
     style PROOF fill:#e6f4ea,stroke:#34a853
 ```
 
-`scripts/demo_redline.py --libreoffice` runs this. LibreOffice drops
-`w:rPrChange` on export — its own limitation, not ours — so character-formatting
-revisions are excluded from that comparison. Word handles them.
+LibreOffice drops `w:rPrChange` on export — its own limitation, not ours — so
+character-formatting revisions are excluded from that comparison. Word handles
+them. The same headless conversion is what `scripts/screenshots.py` uses to
+render [the gallery in the README](../README.md#what-it-produces): those images
+are LibreOffice's own rendering of our markup, which is the round trip working
+in public.
 
 ---
 
 ## The test suite
 
-**307 tests.** Almost all assert both directions of the round trip.
+**350 tests**, in `tests/`. Almost all assert both directions of the round trip.
 
 | File | Covers |
 |---|---|
 | `test_redline.py` | tracked-change primitives, run splitting, accept/reject |
 | `test_addressing.py` | clause resolution, insert/delete/reorder correctness |
+| `test_paragraphs.py` | the paragraph address space: folded matching, every rejection, plan fingerprints |
 | `test_segments.py` | structure detection, whole-document rendering, ambiguity |
 | `test_pipeline.py` | the renumbering cascade, action plans |
 | `test_full_redline.py` | compare + actions + comments composed |
-| `test_reviewers.py` | both providers via `httpx.MockTransport` |
+| `test_reviewers.py` | both providers via a mock transport |
 | `test_chunked.py` | segmentation, triage floors, caching, concurrency |
 | `test_merge.py` | every conflict and pre-flight rule |
 
@@ -139,9 +143,14 @@ Both providers are driven through their **real SDKs** with a mock transport — 
 key, no network, but genuine request serialisation and response parsing.
 
 ```bash
-uv run pytest -q                                    # 307 tests
-uv run python scripts/demo_redline.py --libreoffice # self-check + LibreOffice
+uv run pytest -q                        # 350 tests
+uv run python examples/run_all.py       # 26 examples, every option, as a smoke test
+uv run pre-commit run --all-files       # the whole gate: lint, types, tests, examples
 ```
+
+CI runs all of it on Python 3.12 and 3.13 across Linux, macOS and Windows, then
+builds the wheel and installs it into a clean environment to prove it stands on
+its own.
 
 ---
 

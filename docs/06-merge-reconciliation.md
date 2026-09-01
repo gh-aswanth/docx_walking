@@ -193,7 +193,7 @@ equals `proposed`. Write it with `--merge-report merge.json`.
 
 | | |
 |---|---|
-| `merge.py` | `reduce_segments` and each stage above |
-| `actions.py` | `validate_actions`, `STRUCTURAL_ACTIONS`, `ANNOTATION_ACTIONS` |
+| `planning/merge.py` | `reduce_segments` and each stage above |
+| `planning/actions.py` | `validate_actions`, `STRUCTURAL_ACTIONS`, `ANNOTATION_ACTIONS` |
 
 **Next:** [Verification →](07-verification.md)

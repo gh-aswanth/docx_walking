@@ -153,7 +153,7 @@ else. The numbering checks are skipped too, since inconsistency is then expected
 
 | | |
 |---|---|
-| `clauses.py` | `ClauseTree.renumber`, `LabelSnapshot`, `iter_references`, `collect_reference_edits` |
-| `actions.py` | `ActionPlanner._renumber`, `_rewrite_label`, `_rewrite_reference` |
+| `structure/clauses.py` | `ClauseTree.renumber`, `LabelSnapshot`, `iter_references`, `collect_reference_edits` |
+| `planning/actions.py` | `ActionPlanner._renumber`, `_rewrite_label`, `_rewrite_reference` |
 
 **Next:** [The action pipeline →](04-action-pipeline.md)

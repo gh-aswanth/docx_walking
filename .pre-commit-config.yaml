@@ -63,6 +63,16 @@ repos:
       - id: uv-export
         args: [--frozen, --no-dev, --output-file=requirements.txt]
 
+  # --- the docs: fences, links, mermaid labels, stale module paths
+  - repo: local
+    hooks:
+      - id: docs
+        name: docs structure
+        entry: uv run python scripts/check_docs.py
+        language: system
+        files: \.md$
+        pass_filenames: false
+
   # --- the suite and the examples are the real gate
   - repo: local
     hooks:

@@ -1,7 +1,11 @@
 # docx-redline — how it works
 
-Nine short documents, one per workflow. Each is a diagram plus the few facts you
+Ten short documents, one per workflow. Each is a diagram plus the few facts you
 need to read it. Start here, then follow whichever thread you care about.
+
+Want to see the output rather than read about it? The README has a
+[gallery of rendered redlines](../README.md#what-it-produces), and
+[`examples/`](../examples/) has 26 runnable files covering every option.
 
 | | Workflow | Read it when you want to know |
 |---|---|---|
@@ -14,6 +18,7 @@ need to read it. Start here, then follow whichever thread you care about.
 | 7 | [Verification](07-verification.md) | How the result is proven correct |
 | 8 | [Document compare](08-document-compare.md) | Diffing two `.docx` files into one redline |
 | 9 | [Failure modes](09-failure-modes.md) | What goes wrong, and where it is caught |
+| 10 | [Paragraph addressing](10-paragraph-addressing.md) | How a model points at text, and how a wrong pointer is refused |
 
 ---
 
@@ -28,7 +33,7 @@ flowchart TB
     end
 
     DOC --> STRUCT
-    STRUCT["<b>structure</b><br/>segments.py<br/><i>read the whole document</i>"] --> REVIEWER
+    STRUCT["<b>structure</b><br/>structure/segments.py<br/><i>read the whole document</i>"] --> REVIEWER
 
     subgraph propose ["propose — where action items come from"]
         REVIEWER{"reviewer"}
@@ -46,8 +51,8 @@ flowchart TB
     ITEMS --> PLAN
     REV -.-> PLAN
     subgraph apply ["apply — one planner, one pass"]
-        PLAN["<b>ActionPlanner</b><br/>actions.py"] --> EDITS["tracked changes<br/>edits.py · redline.py"]
-        EDITS --> RENUM["<b>renumber</b><br/>clauses.py<br/><i>labels + cross-references</i>"]
+        PLAN["<b>ActionPlanner</b><br/>planning/actions.py"] --> EDITS["tracked changes<br/>oxml/edits.py · editing/redline.py"]
+        EDITS --> RENUM["<b>renumber</b><br/>structure/clauses.py<br/><i>labels + cross-references</i>"]
     end
 
     RENUM --> VERIFY["<b>verify</b><br/>accept ⇄ reject round trip"]
@@ -64,53 +69,79 @@ flowchart TB
 
 ---
 
-## Two layers, pick the one you need
+## Three layers, pick the one you need
 
 ```mermaid
 flowchart LR
-    subgraph low ["low level — you know the paragraphs"]
+    subgraph l1 ["1 — you know the paragraphs"]
         direction TB
-        L1["Redliner"] --> L2["replace_text()<br/>delete_paragraph()<br/>insert_table_row()"]
+        A1["Redliner"] --> A2["replace_text()<br/>delete_paragraph()<br/>insert_table_row()"]
     end
-    subgraph high ["high level — a model decides"]
+    subgraph l2 ["2 — a model quotes spans, and may be wrong"]
         direction TB
-        H1["full_redline()"] --> H2["action items<br/>clause: '12.1'"]
-        H2 --> H3["renumbering<br/>cross-references<br/>verification"]
+        B1["ParagraphIndex"] --> B2["RedlineEdit(19, 'thirty (30) days', ...)<br/><i>located before anything is written</i>"]
     end
-    low -.->|"is built on"| high
+    subgraph l3 ["3 — a model restructures the document"]
+        direction TB
+        C1["full_redline()"] --> C2["action items<br/>clause: '12.1'"]
+        C2 --> C3["renumbering<br/>cross-references<br/>verification"]
+    end
+    l1 -.->|"is built on"| l2 -.->|"is built on"| l3
 ```
 
-|  | `Redliner` | `full_redline` |
-|---|---|---|
-| Addresses content by | text, paragraph, table index | clause number (`"12.1"`) |
-| Knows about numbering | no | yes — renumbers and repoints references |
-| Input | method calls | action items from a reviewer or a file |
-| Use when | you know exactly what to edit | something else is deciding |
+|  | `Redliner` | `ParagraphIndex` | `full_redline` |
+|---|---|---|---|
+| Addresses content by | text, paragraph, table index | integer id + quoted span | clause number (`"12.1"`) |
+| Knows about numbering | no | reads it, does not rewrite it | yes — renumbers and repoints references |
+| Verifies before writing | no | **yes** | schema, then clause resolution |
+| Input | method calls | `RedlineEdit` / `ReviewNote`, or model JSON | action items from a reviewer or a file |
+| Use when | you know exactly what to edit | something else is deciding, and may be wrong | something else is restructuring |
+| Read | [1](01-tracked-changes.md) | [10](10-paragraph-addressing.md) | [4](04-action-pipeline.md) |
 
 ---
 
 ## Where the code lives
 
+Four subpackages, strictly layered — each may import downward and never up, and
+a test asserts it.
+
 ```
-docx_redline/
-  ns.py oxml.py textmap.py    OOXML plumbing: namespaces, elements, run splitting
-  errors.py                   shared exception hierarchy
-  edits.py                    the primitives: w:ins / w:del / ¶-marks / rows
-  redline.py                  Redliner — the public low-level API
-  review.py                   accept / reject / summarise
-  diffing.py                  word-level diff
-  compare.py                  document-vs-document redline
-  clauses.py                  clause tree, renumbering, cross-references
-  segments.py                 whole-document view: detection, rendering, segmentation
-  actions.py                  action vocabulary + the planner
-  agent.py                    reviewers: Claude, OpenAI, offline rules
-  chunked.py                  long documents: index, triage, parallel map, cache
-  merge.py                    reconciling proposals from independent segments
-  pipeline.py                 the staged pipeline and full_redline
-  ops.py cli.py               declarative ops, command line
+oxml  ->  structure  ->  editing  ->  planning  ->  cli
 ```
 
-**307 tests.** The invariant nearly all of them lean on:
+```
+docx_redline/
+  errors.py                   shared exception hierarchy
+  cli.py                      command line front end
+
+  oxml/                       OOXML plumbing — knows nothing about clauses
+    ns.py elements.py           namespaces, element construction, schema order
+    revisions.py                author, timestamp, unique w:id allocation
+    textmap.py                  flat character map over a paragraph; run splitting
+    edits.py                    the primitives: w:ins / w:del / ¶-marks / rows
+    diffing.py                  word-level diff
+
+  structure/                  reading the document — never writes a revision
+    clauses.py                  clause tree, renumbering, cross-references
+    segments.py                 whole-document view: detection, rendering, segmentation
+
+  editing/                    applying edits — everything here writes revisions
+    redline.py                  Redliner — the public low-level API
+    review.py                   accept / reject / summarise
+    compare.py                  document-vs-document redline
+    ops.py                      declarative JSON edit plans
+    paragraphs.py               paragraph ids, folded matching, plan fingerprints
+
+  planning/                   deciding edits — what to change, not how
+    actions.py                  action vocabulary + the planner
+    merge.py                    reconciling proposals from independent segments
+    agent.py                    reviewers: Claude, OpenAI, offline rules
+    chunked.py                  long documents: index, triage, parallel map, cache
+    pipeline.py                 the staged pipeline and full_redline
+```
+
+**350 tests** in `tests/`, **26 runnable examples** in `examples/`. The invariant
+nearly all of them lean on:
 
 > `accept(redline)` is the intended new document.
 > `reject(redline)` is the original, exactly.

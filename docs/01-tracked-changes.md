@@ -40,7 +40,7 @@ flowchart TB
     D --> E["wrap them"]
 ```
 
-`textmap.py` builds the map and does the splitting; `edits.py` does the wrapping.
+`oxml/textmap.py` builds the map and does the splitting; `oxml/edits.py` does the wrapping.
 
 ---
 
@@ -104,7 +104,7 @@ flowchart TB
 ```
 
 Editing text a previous pass inserted therefore **splits** the enclosing `w:ins`
-rather than nesting inside it (`_escape_non_nestable`, `edits.py`).
+rather than nesting inside it (`_escape_non_nestable`, `oxml/edits.py`).
 
 ---
 
@@ -140,7 +140,7 @@ flowchart LR
     style ORIG fill:#e8f0fe,stroke:#4285f4
 ```
 
-`review.py` resolves the markup both ways: unwrap `w:ins` / drop `w:del` to
+`editing/review.py` resolves the markup both ways: unwrap `w:ins` / drop `w:del` to
 accept, the reverse to reject, merging paragraphs where a ¶ mark disappears.
 `reject == original` is the single strongest check in the codebase.
 
@@ -150,9 +150,9 @@ accept, the reverse to reject, merging paragraphs where a ¶ mark disappears.
 
 | | |
 |---|---|
-| `textmap.py` | flat character map, run splitting |
-| `edits.py` | `w:ins` / `w:del` / ¶-marks / rows / `*PrChange` |
-| `redline.py` | `Redliner` — the public API |
-| `review.py` | `accept_all` / `reject_all` / `summarize` |
+| `oxml/textmap.py` | flat character map, run splitting |
+| `oxml/edits.py` | `w:ins` / `w:del` / ¶-marks / rows / `*PrChange` |
+| `editing/redline.py` | `Redliner` — the public API |
+| `editing/review.py` | `accept_all` / `reject_all` / `summarize` |
 
 **Next:** [Document structure →](02-document-structure.md)
