@@ -112,7 +112,7 @@ jobs:
           print("wheel smoke test ok:", len(index), "paragraphs,", meta["License-Expression"])
           PY
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/
