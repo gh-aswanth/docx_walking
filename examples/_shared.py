@@ -1,0 +1,51 @@
+"""Shared scaffolding for the examples. Not part of the library.
+
+Every example is standalone: run it directly, or run them all with
+``python examples/run_all.py``. Each writes its output under
+``examples/output/`` so nothing lands in the repo root.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+DATA = Path(__file__).resolve().parent / "data"
+SOURCE = DATA / "Sample_Software_License_Agreement.docx"
+PLAN = DATA / "action_items.json"
+OUT = Path(__file__).resolve().parent / "output"
+OUT.mkdir(exist_ok=True)
+
+AUTHOR = "Outside Counsel"
+
+
+def banner(title: str) -> None:
+    print("=" * 76)
+    print(title)
+    print("=" * 76)
+
+
+def section(title: str) -> None:
+    print(f"\n--- {title} ---")
+
+
+def fresh(**kwargs):
+    """A Redliner over an untouched copy of the sample contract."""
+    from docx_redline import Redliner
+
+    kwargs.setdefault("author", AUTHOR)
+    return Redliner(SOURCE, **kwargs)
+
+
+def save(rl, name: str) -> Path:
+    path = OUT / name
+    rl.save(path)
+    print(f"\nwrote {path.relative_to(ROOT)}")
+    return path
+
+
+def show(rl, limit: int = 0) -> None:
+    print(rl.summary().format(limit=limit))

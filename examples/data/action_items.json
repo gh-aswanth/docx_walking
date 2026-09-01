@@ -1,0 +1,265 @@
+{
+  "document": "Sample_Software_License_Agreement.docx",
+  "generated_by": "demo",
+  "summary": "A deliberately broad customer-side markup. Every action type the planner supports appears at least once, and between them the items use every field in docx_redline.planning.agent.ACTION_FIELDS. The last three target the exhibits and the signature block -- content the reviewer could not see at all until the whole document was rendered.",
+  "action_items": [
+    {
+      "id": "AI-001",
+      "type": "replace_text",
+      "clause": "3.2",
+      "find": "thirty (30) days",
+      "replace": "forty-five (45) days",
+      "rationale": "Align payment terms with our standard 45-day cycle.",
+      "severity": "high"
+    },
+    {
+      "id": "AI-002",
+      "type": "replace_text",
+      "find": "Provider shall",
+      "replace": "Provider will",
+      "all": true,
+      "rationale": "House style: plain 'will' over 'shall' for Provider obligations. `all` hits every occurrence.",
+      "severity": "low"
+    },
+    {
+      "id": "AI-003",
+      "type": "replace_text",
+      "clause": "3.3",
+      "find": "1\\.5% per month",
+      "regex": true,
+      "replace": "1.0% per month",
+      "rationale": "Reduce default interest. `regex` lets the pattern escape the decimal point.",
+      "severity": "high"
+    },
+    {
+      "id": "AI-004",
+      "type": "insert_text",
+      "clause": "3.2",
+      "anchor": "of the invoice date",
+      "position": "after",
+      "text": ", without setoff or deduction",
+      "rationale": "Payment must not be netted against disputed amounts.",
+      "severity": "medium"
+    },
+    {
+      "id": "AI-005",
+      "type": "delete_text",
+      "clause": "4.2",
+      "find": " automatically",
+      "rationale": "Renewal should be affirmative, not automatic.",
+      "severity": "high"
+    },
+    {
+      "id": "AI-006",
+      "type": "delete_text",
+      "clause": "2.2",
+      "find": "\\s*\\(d\\) use the Services to build a competing product;",
+      "regex": true,
+      "rationale": "Over-broad non-compete restriction; strike the whole limb.",
+      "severity": "critical"
+    },
+    {
+      "id": "AI-007",
+      "type": "rewrite_clause",
+      "clause": "6.4",
+      "text": "Breach Notification. Provider will notify Customer without undue delay, and in no event later than forty-eight (48) hours, after becoming aware of a confirmed security breach affecting Customer Data, and will provide a written root-cause analysis within ten (10) business days.",
+      "rationale": "Tighten the notification window and add a root-cause obligation. Word-level diff marks only the changed phrases.",
+      "severity": "critical"
+    },
+    {
+      "id": "AI-008",
+      "type": "insert_clause",
+      "before_clause": "1.1",
+      "title": "Affiliate",
+      "text": "\u201cAffiliate\u201d means any entity that controls, is controlled by, or is under common control with a Party.",
+      "rationale": "Affiliate is used but never defined. Inserting before 1.1 pushes every later definition down one.",
+      "severity": "medium"
+    },
+    {
+      "id": "AI-009",
+      "type": "insert_clause",
+      "into_section": "3",
+      "text": "All amounts are stated and payable in U.S. dollars unless the Order Form says otherwise.",
+      "title": "Currency",
+      "rationale": "`into_section` appends to the end of a section when no anchor clause is given.",
+      "severity": "low"
+    },
+    {
+      "id": "AI-010",
+      "type": "delete_clause",
+      "clause": "2.3",
+      "rationale": "Reservation of Rights is redundant with the licence grant; deleting it closes the numbering gap.",
+      "severity": "low"
+    },
+    {
+      "id": "AI-011",
+      "type": "move_clause",
+      "clause": "12.1",
+      "after_clause": "4.1",
+      "rationale": "Governing law belongs with the term provisions. Both clause groups renumber and every cross-reference follows.",
+      "severity": "medium"
+    },
+    {
+      "id": "AI-012",
+      "type": "move_clause",
+      "clause": "10.3",
+      "into_section": "10",
+      "position": "first",
+      "rationale": "The excluded claims frame the whole liability section, so they should lead it.",
+      "severity": "medium"
+    },
+    {
+      "id": "AI-013",
+      "type": "move_clause",
+      "clause": "7.2",
+      "before_clause": "7.1",
+      "rationale": "Customer Data before Provider IP.",
+      "severity": "low"
+    },
+    {
+      "id": "AI-014",
+      "type": "reorder_clauses",
+      "section": "8",
+      "order": [
+        "8.1",
+        "8.3",
+        "8.2"
+      ],
+      "rationale": "Put the exclusions next to the definition they qualify. Only the clauses that must move are moved.",
+      "severity": "low"
+    },
+    {
+      "id": "AI-015",
+      "type": "move_section",
+      "section": "11",
+      "before_section": "10",
+      "rationale": "Indemnification should precede the limitation of liability that carves it out.",
+      "severity": "medium"
+    },
+    {
+      "id": "AI-016",
+      "type": "delete_section",
+      "section": "5",
+      "rationale": "The service levels are already set out in Exhibit B; one source of truth. The whole section and its sub-clauses go.",
+      "severity": "high"
+    },
+    {
+      "id": "AI-017",
+      "type": "insert_section",
+      "after_section": "12",
+      "title": "Insurance",
+      "text": "Provider will maintain cyber-liability and professional-indemnity insurance of not less than $5,000,000 per occurrence throughout the Subscription Term, and will name Customer as an additional insured on request.",
+      "rationale": "Standard insurance covenant is missing from the agreement.",
+      "severity": "medium"
+    },
+    {
+      "id": "AI-018",
+      "type": "insert_row",
+      "table": 0,
+      "values": [
+        "Countersigned by",
+        "Date"
+      ],
+      "rationale": "Signature block needs a countersignature line.",
+      "severity": "low"
+    },
+    {
+      "id": "AI-019",
+      "type": "update_cell",
+      "table": 0,
+      "row": 1,
+      "col": 0,
+      "text": "Name (please print)",
+      "rationale": "Ambiguous instruction in the signature block.",
+      "severity": "low"
+    },
+    {
+      "id": "AI-020",
+      "type": "delete_row",
+      "table": 1,
+      "row": 1,
+      "rationale": "Customer's block does not need a printed-name row; the signature line carries it.",
+      "severity": "low"
+    },
+    {
+      "id": "AI-021",
+      "type": "format_text",
+      "clause": "12.1",
+      "find": "Delaware",
+      "bold": true,
+      "color": "C00000",
+      "rationale": "Flag the governing-law jurisdiction for the deal team. Recorded as a w:rPrChange.",
+      "severity": "low"
+    },
+    {
+      "id": "AI-022",
+      "type": "format_text",
+      "clause": "9.3",
+      "find": "AS IS",
+      "italic": true,
+      "underline": true,
+      "highlight": "YELLOW",
+      "rationale": "Make the disclaimer's operative words impossible to skim past.",
+      "severity": "medium"
+    },
+    {
+      "id": "AI-023",
+      "type": "format_clause",
+      "clause": "6.4",
+      "alignment": "JUSTIFY",
+      "space_before": 12,
+      "space_after": 18,
+      "rationale": "Give the breach-notification clause room to breathe. Recorded as a w:pPrChange.",
+      "severity": "low"
+    },
+    {
+      "id": "AI-024",
+      "type": "format_clause",
+      "clause": "1.1",
+      "style": "Heading 4",
+      "rationale": "Promote the lead definition so it shows up in the navigation pane.",
+      "severity": "low"
+    },
+    {
+      "id": "AI-025",
+      "type": "comment",
+      "clause": "10.2",
+      "text": "Confirm the cap multiple with finance before signature.",
+      "rationale": "Open point for the deal team.",
+      "severity": "medium"
+    },
+    {
+      "id": "AI-026",
+      "type": "comment",
+      "find": "SOC 2 Type II",
+      "text": "Ask whether ISO 27001 is also in scope for the current audit period.",
+      "rationale": "A comment can anchor on a phrase instead of a clause number.",
+      "severity": "low"
+    },
+    {
+      "id": "AI-027",
+      "type": "replace_text",
+      "find": "Annual Fees: $186,000, payable annually in advance",
+      "replace": "Annual Fees: $186,000, payable quarterly in arrears",
+      "rationale": "Exhibit A: align the payment cadence with clause 3.2. Unnumbered content is targeted by a unique quote, not a clause number.",
+      "severity": "high"
+    },
+    {
+      "id": "AI-028",
+      "type": "replace_text",
+      "find": "Below 95.0% uptime: 25% service credit of monthly Fees",
+      "replace": "Below 95.0% uptime: 50% service credit of monthly Fees, and Customer may terminate for convenience",
+      "rationale": "Exhibit B: the tail-risk credit is too weak to change behaviour.",
+      "severity": "critical"
+    },
+    {
+      "id": "AI-029",
+      "type": "comment",
+      "find": "Exhibit C \u2014 Data Processing Addendum (Summary)",
+      "text": "This is a summary only. Ask for the executable DPA before signature.",
+      "rationale": "Exhibit C is incorporated by reference but only summarised here.",
+      "severity": "high"
+    }
+  ],
+  "author": "Redline"
+}
