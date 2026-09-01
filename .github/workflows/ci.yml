@@ -18,10 +18,11 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  # Reproducible resolution: CI must fail on lockfile drift, never silently
-  # resolve something different from what a developer has locally.
-  UV_FROZEN: "1"
+# Reproducible resolution: every `uv sync` below passes `--locked`, which asserts
+# uv.lock is already current for pyproject.toml and fails if it is not. Do NOT
+# also set UV_FROZEN here -- `--frozen` means "use the lock without checking it",
+# so uv rejects the pair outright:
+#     error: the argument `--locked` cannot be used with `UV_FROZEN`
 
 jobs:
   quality:
