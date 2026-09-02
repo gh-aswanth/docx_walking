@@ -61,15 +61,6 @@ jobs:
         with:
           node-version: 22
 
-      # Vercel's Python builder installs with uv and requires >= 0.9.25. The
-      # runner has none, which fails as "uv is required but was not found in
-      # PATH" at the build step -- after a successful pull, so it looks like a
-      # project problem rather than a missing tool.
-      - uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: uv.lock
-
       - run: npm install --global vercel@latest
 
       # `vercel pull` fails with the same opaque message whether the ids are
@@ -94,13 +85,17 @@ jobs:
             --environment=${{ github.event_name == 'push' && 'production' || 'preview' }} \
             --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: build
-        run: vercel build ${{ github.event_name == 'push' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
-
+      # Built on Vercel, not here. `vercel build` + `--prebuilt` looked
+      # attractive -- the build happens where we can see it -- but it records a
+      # filePathMap of the whole working directory, and .vercelignore then
+      # strips files that map still references:
+      #     ENOENT: lstat '/vercel/path0/.github/dependabot.yml'
+      # Building remotely keeps the manifest and the upload consistent, and
+      # Vercel's builders already have the uv their Python runtime requires.
       - name: deploy
         id: deploy
         run: |
-          url=$(vercel deploy --prebuilt \
+          url=$(vercel deploy \
             ${{ github.event_name == 'push' && '--prod' || '' }} \
             --token=${{ secrets.VERCEL_TOKEN }})
           echo "url=$url" >> "$GITHUB_OUTPUT"
