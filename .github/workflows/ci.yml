@@ -25,30 +25,6 @@ permissions:
 #     error: the argument `--locked` cannot be used with `UV_FROZEN`
 
 jobs:
-  quality:
-    name: lint · format · types
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: uv.lock
-      - run: uv sync --locked
-
-      # Each step is the same command the pre-commit hook runs, so a green
-      # local commit cannot be a red CI run.
-      - name: ruff check
-        run: uv run ruff check --output-format=github .
-      - name: ruff format
-        run: uv run ruff format --check --diff .
-      - name: isort
-        run: uv run isort --check-only --diff .
-      - name: mypy
-        run: uv run mypy
-      - name: docs structure
-        run: uv run python scripts/check_docs.py
-
   test:
     name: tests · py${{ matrix.python }} · ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -121,9 +97,19 @@ jobs:
           path: dist/
           retention-days: 14
 
-  hooks:
-    name: pre-commit
+  # Lint, format, imports, types, docs, file hygiene and the lockfile -- all of
+  # it. Running pre-commit rather than restating its commands is what keeps a
+  # green local commit from being a red CI run.
+  #
+  # pytest and the examples are hooks too, but the `test` job above already runs
+  # them across six interpreter/OS combinations. Running them a seventh time here
+  # would tell us nothing, so they are skipped.
+  quality:
+    name: lint · format · types · docs
     runs-on: ubuntu-latest
+    env:
+      SKIP: pytest,examples
+      RUFF_OUTPUT_FORMAT: github    # findings annotate the diff, not just the log
     steps:
       - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v7

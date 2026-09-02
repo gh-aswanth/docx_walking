@@ -44,11 +44,19 @@ sides come out ahead of a fork nobody can see.
    That runs ruff (lint + format), isort, mypy, `uv lock --check`, the 350-test
    suite, and all 26 examples. All of it must pass.
 
-   CI runs the same commands, so a green commit locally cannot be a red run on
-   the PR. On top of that it tests **Python 3.12 and 3.13 on Linux, macOS and
-   Windows**, builds the wheel and sdist, and installs the wheel into a clean
-   environment to prove it stands on its own. Nothing is published that has not
-   passed all of it -- `release.yml` calls `ci.yml` rather than restating it.
+   CI runs *this exact command*, not a copy of it — the `quality` job is
+   `pre-commit run --all-files`, so a green commit locally cannot be a red run
+   on the PR. Three jobs, and nothing runs twice:
+
+   | Job | Runs |
+   |---|---|
+   | `quality` ×1 | every hook except `pytest` and `examples` — lint, format, imports, types, docs, file hygiene, lockfile |
+   | `test` ×6 | `pytest` and `examples`, on Python 3.12 and 3.13 × Linux, macOS, Windows |
+   | `build` ×1 | wheel + sdist, `twine check --strict`, then install into a clean venv and run it |
+
+   `quality` skips `pytest` and `examples` via `SKIP=` because the matrix
+   already runs them six times; a seventh on the same interpreter would tell us
+   nothing.
 4. **Examples stay honest.** `examples/` is executable documentation. If you
    change an option, update the example that demonstrates it —
    `python examples/run_all.py` fails the build if one stops running.
