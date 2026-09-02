@@ -34,7 +34,7 @@ jobs:
       name: ${{ github.event_name == 'push' && 'production' || 'preview' }}
       url: ${{ steps.deploy.outputs.url }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # Copying an id out of a file usually brings a newline with it, and GitHub
       # stores secrets verbatim. A trailing \n turns a valid id into an invalid
