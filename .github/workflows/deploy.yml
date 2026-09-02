@@ -102,12 +102,30 @@ jobs:
           echo "### Deployed to $url" >> "$GITHUB_STEP_SUMMARY"
 
       # A deployment that 500s is not a deployment. Check before declaring it.
+      #
+      # If Deployment Protection is on, Vercel answers every request with a 302
+      # to its SSO login and the app is never reached. Send the automation
+      # bypass header when the secret is set; otherwise say plainly that the
+      # 302 is the protection layer, not the app.
       - name: the deployment actually serves
+        env:
+          BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           for path in /healthz / /e/01_quickstart; do
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 45 \
+                   ${BYPASS:+-H "x-vercel-protection-bypass: $BYPASS"} \
                    "${{ steps.deploy.outputs.url }}$path")
             echo "  $code  $path"
+            if [ "$code" = "302" ] || [ "$code" = "401" ]; then
+              echo "::error::$path returned $code -- that is Vercel Deployment Protection,"
+              echo "not the application. The deploy itself succeeded. Either:"
+              echo "  a) turn it off:  Vercel > Project > Settings > Deployment Protection"
+              echo "                   > Vercel Authentication > Disabled   (a public demo)"
+              echo "  b) or keep it and add the bypass: same page > Protection Bypass for"
+              echo "     Automation > Create, then store it as the repository secret"
+              echo "     VERCEL_AUTOMATION_BYPASS_SECRET"
+              exit 1
+            fi
             [ "$code" = "200" ] || { echo "::error::$path returned $code"; exit 1; }
           done
 
