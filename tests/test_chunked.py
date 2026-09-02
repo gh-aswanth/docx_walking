@@ -604,3 +604,22 @@ def test_a_stream_that_ends_early_splits_instead_of_retrying_blindly(big_tree):
         reviewer.propose(big_tree, "brief")
     # one call for the parent, then one per half -- not three per segment
     assert len(engine.calls) == 3, len(engine.calls)
+
+
+def test_an_unwritable_cache_directory_disables_the_cache(tmp_path):
+    """A read-only home is a lost optimisation, not a failed review.
+
+    The default cache lives under the user's home directory, which is read-only
+    on a serverless host. Raising there took down a whole review for the sake of
+    a directory nothing depends on.
+    """
+    from docx_redline.planning.chunked import SegmentCache
+
+    blocked = tmp_path / "blocked"
+    blocked.write_text("not a directory", encoding="utf-8")
+
+    cache = SegmentCache(blocked / "segments", enabled=True)
+    assert cache.enabled is False
+    assert isinstance(cache.error, OSError)
+    assert cache.get("anything") is None  # still safe to call
+    cache.put("anything", {"ok": True})  # and a no-op, not a crash

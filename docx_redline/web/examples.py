@@ -128,11 +128,18 @@ def run(example: Example, *, timeout: int = 120) -> Run:
         return _CACHE[example.slug]
 
     workdir = Path(tempfile.mkdtemp(prefix=f"{example.slug}-"))
+    # Hand the child everything the parent can already import, not just the
+    # repository root. Setting PYTHONPATH to ROOT alone *replaces* what the host
+    # put there -- on a serverless runtime the dependencies live in a vendored
+    # directory on PYTHONPATH, so overwriting it loses them and every example
+    # dies with "No module named 'docx'" while the server itself works fine.
+    inherited = os.environ.get("PYTHONPATH", "").split(os.pathsep)
+    search = dict.fromkeys(p for p in (str(ROOT), *sys.path, *inherited) if p)
     env = {
         **os.environ,
         "DOCX_REDLINE_OUT": str(workdir),
         "PYTHONIOENCODING": "utf-8",
-        "PYTHONPATH": str(ROOT),
+        "PYTHONPATH": os.pathsep.join(search),
     }
     started = time.perf_counter()
     try:

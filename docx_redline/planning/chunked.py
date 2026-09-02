@@ -189,6 +189,10 @@ class SegmentCache:
     the brief or the prompt invalidates by construction rather than by hand.
     """
 
+    #: Set when the directory could not be created, so callers can say why the
+    #: cache is off instead of silently getting no reuse.
+    error: OSError | None = None
+
     def __init__(
         self, directory: str | Path, *, enabled: bool = True, refresh: bool = False
     ) -> None:
@@ -196,7 +200,15 @@ class SegmentCache:
         self.enabled = enabled
         self.refresh = refresh
         if self.enabled:
-            self.directory.mkdir(parents=True, exist_ok=True)
+            try:
+                self.directory.mkdir(parents=True, exist_ok=True)
+            except OSError as exc:
+                # The default location is under the user's home, which is
+                # read-only on a serverless host and may be absent in a
+                # container. A cache that cannot be created is a lost
+                # optimisation, not a failed review -- carry on without it.
+                self.enabled = False
+                self.error = exc
 
     @staticmethod
     def key(*parts: str) -> str:
