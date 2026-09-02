@@ -1,0 +1,15 @@
+# Vercel's Python builder installs with `uv sync` from uv.lock, so the lock and
+# pyproject must stay. Everything below is never served, and every megabyte
+# counts against the 250 MB function limit.
+.github/
+.venv/
+.git/
+.idea/
+.pytest_cache/
+.cache/
+tests/
+scripts/
+docs/
+dist/
+examples/output/
+requirements-lock.txt

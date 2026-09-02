@@ -194,6 +194,9 @@ web = [
 ]
 
 [package.dev-dependencies]
+deploy = [
+    { name = "docx-redline", extra = ["web"] },
+]
 dev = [
     { name = "docx-redline", extra = ["llm", "web"] },
     { name = "httpx" },
@@ -219,6 +222,7 @@ requires-dist = [
 provides-extras = ["llm", "web"]
 
 [package.metadata.requires-dev]
+deploy = [{ name = "docx-redline", extras = ["web"] }]
 dev = [
     { name = "docx-redline", extras = ["llm", "web"] },
     { name = "httpx", specifier = ">=0.28" },

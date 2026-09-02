@@ -50,8 +50,8 @@ docx_redline/web/
   static/app.css   paper, change bars, revision colours     }
   examples/        force-included from the repository root at build time
 api/index.py       Vercel entry point -- imports `app` from here
-vercel.json        runtime, routing, cache headers
-requirements.txt   what Vercel installs (it deploys from a checkout)
+vercel.json        memory, duration, routing, cache headers
+.vercelignore      keeps tests, docs and CI out of the function
 ```
 
 `examples.py` prefers the copy inside the package and falls back to the
@@ -65,6 +65,12 @@ passes. Vercel's own Git integration would deploy either way; driving the CLI
 from the workflow means a red build never reaches production. The workflow also
 curls `/healthz`, `/` and one example afterwards, because a deployment that 500s
 is not a deployment.
+
+Vercel's Python builder installs with `uv sync`, which takes the project's
+default dependency groups rather than an extra — so `pyproject.toml` declares a
+`deploy` group holding `docx-redline[web]` and lists it in
+`[tool.uv] default-groups`. Without that the function deploys with no FastAPI
+in it and 500s on the first request.
 
 Three repository secrets are needed: `VERCEL_TOKEN`, `VERCEL_ORG_ID`,
 `VERCEL_PROJECT_ID`. Run `vercel link` once locally and the last two are in

@@ -70,6 +70,9 @@ docx-redline = "docx_redline.cli:_entry"
 docx_redline = "docx_redline.cli:_entry"
 
 [dependency-groups]
+# What the deployed demo needs, over the library's own dependencies.
+deploy = ["docx-redline[web]"]
+
 # `uv sync` must give a venv that can run the whole suite: tests/test_reviewers.py
 # exercises the Claude and OpenAI plumbing, so it needs their SDKs. Referencing
 # the extra rather than restating the pins keeps one source of truth.
@@ -83,6 +86,14 @@ dev = [
     "pytest>=9.1.1",
     "ruff>=0.16.5",
 ]
+[tool.uv]
+# Vercel's Python builder installs with `uv sync`, which takes the project's
+# default dependencies -- not an extra. Without this the deployed function has
+# no FastAPI and 500s on the first request. Listing `deploy` as a default group
+# is what puts the web extra into that sync; `dev` already pulls it in for
+# developers, so this changes nothing locally.
+default-groups = ["dev", "deploy"]
+
 [build-system]
 requires = ["hatchling", "hatch-fancy-pypi-readme"]
 build-backend = "hatchling.build"
