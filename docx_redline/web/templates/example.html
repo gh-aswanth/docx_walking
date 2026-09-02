@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}{{ ex.title }} · docx-redline{% endblock %}
+
+{% block scripts %}
+<script>
+// Each document pane scrolls to its own revisions. The first is focused on
+// load, because opening a 92-paragraph contract at paragraph 1 hides the very
+// thing the example is demonstrating.
+document.querySelectorAll("article").forEach(article => {
+  const pane = article.querySelector(".doc");
+  const status = article.querySelector(".jump-status");
+  if (!pane) return;
+  const changes = [...pane.querySelectorAll("[data-change]")];
+  let at = 0;
+
+  const show = () => {
+    if (!changes.length) { if (status) status.textContent = "no tracked changes"; return; }
+    const el = changes[at];
+    // offsetTop is relative to the nearest positioned ancestor, and .para is
+    // position:relative for the change bar -- so measure against the pane.
+    const top = el.getBoundingClientRect().top
+              - pane.getBoundingClientRect().top
+              + pane.scrollTop
+              - pane.clientHeight / 3;
+    pane.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+    changes.forEach(c => c.classList.remove("focus-change"));
+    el.classList.add("focus-change");
+    if (status) status.textContent = `change ${at + 1} of ${changes.length}`;
+  };
+
+  article.querySelector('[data-jump="next"]')?.addEventListener("click", () => {
+    if (!changes.length) return;
+    at = (at + 1) % changes.length; show();
+  });
+  article.querySelector('[data-jump="prev"]')?.addEventListener("click", () => {
+    if (!changes.length) return;
+    at = (at - 1 + changes.length) % changes.length; show();
+  });
+
+  if (changes.length) show();
+});
+</script>
+{% endblock %}
+{% block content %}
+
+<nav class="mb-5 flex items-center gap-3 text-sm">
+  <a href="/" class="text-slate-500 hover:text-ink">← all examples</a>
+  <span class="ml-auto flex gap-3">
+    {% if prev %}<a class="text-slate-500 hover:text-ink" href="/e/{{ prev.slug }}">← {{ prev.name }}</a>{% endif %}
+    {% if next %}<a class="text-slate-500 hover:text-ink" href="/e/{{ next.slug }}">{{ next.name }} →</a>{% endif %}
+  </span>
+</nav>
+
+<header class="mb-6 max-w-3xl">
+  <div class="flex items-center gap-2">
+    <span class="rounded bg-slate-900 px-2 py-0.5 font-mono text-xs text-white">
+      {{ "%02d"|format(ex.number) }}
+    </span>
+    <h1 class="text-2xl font-semibold tracking-tight text-ink">{{ ex.title }}</h1>
+  </div>
+  {% if ex.summary %}
+  <p class="mt-3 whitespace-pre-line text-slate-600">{{ ex.summary }}</p>
+  {% endif %}
+  <p class="mt-3 text-xs text-slate-400">
+    examples/{{ ex.slug }}.py — ran in {{ "%.2f"|format(run.seconds) }}s
+    {% if run.ok %}<span class="text-emerald-600">· exit 0</span>
+    {% else %}<span class="text-rose-600">· FAILED</span>{% endif %}
+  </p>
+</header>
+
+<div class="grid gap-6 lg:grid-cols-2">
+
+  <section class="lg:sticky lg:top-20 lg:self-start">
+    <h2 class="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">Console output</h2>
+    <div class="max-h-[32rem] overflow-auto rounded-xl border border-slate-800 bg-slate-900 p-4">
+      <pre class="console text-slate-100">{{ run.stdout }}</pre>
+      {% if run.stderr %}<pre class="console mt-3 text-rose-300">{{ run.stderr }}</pre>{% endif %}
+    </div>
+
+    <h2 class="mb-2 mt-6 text-sm font-semibold uppercase tracking-wide text-slate-500">Source</h2>
+    <div class="max-h-[28rem] overflow-auto rounded-xl border border-slate-200 bg-white p-4">
+      <pre class="console text-slate-700">{{ ex.source }}</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+      What it wrote
+    </h2>
+
+    {% if not documents %}
+      <div class="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
+        This example prints its result rather than saving a document — read the
+        console output beside it.
+      </div>
+    {% endif %}
+
+    {% for doc in documents %}
+    <article class="mb-6 overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <div class="flex flex-wrap items-center gap-3 border-b border-slate-200 bg-slate-50 px-4 py-2.5">
+        <span class="font-mono text-sm text-ink">{{ doc.name }}</span>
+        <span class="text-xs text-slate-500">{{ doc.total }} tracked change{{ "" if doc.total == 1 else "s" }}</span>
+        <a class="ml-auto rounded-lg bg-slate-900 px-3 py-1 text-xs font-medium text-white hover:bg-slate-700"
+           href="/e/{{ ex.slug }}/download/{{ doc.name }}">Download .docx</a>
+      </div>
+
+      {% if doc.counts %}
+      <div class="flex flex-wrap gap-1.5 border-b border-slate-100 px-4 py-2.5">
+        {% for kind, n in doc.counts.items() %}
+        <span class="rounded-full bg-slate-100 px-2 py-0.5 font-mono text-[11px] text-slate-600">
+          {{ kind }} × {{ n }}
+        </span>
+        {% endfor %}
+        {% for author, n in doc.authors.items() %}
+        <span class="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] text-blue-700">{{ author }} ({{ n }})</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="flex items-center gap-2 border-b border-slate-100 bg-white px-4 py-2">
+        <button type="button" data-jump="prev"
+                class="rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-100">
+          ↑ prev change
+        </button>
+        <button type="button" data-jump="next"
+                class="rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-100">
+          ↓ next change
+        </button>
+        <span class="jump-status text-xs text-slate-400"></span>
+      </div>
+
+      <div class="doc max-h-[40rem] overflow-auto px-6 py-5">{{ doc.html|safe }}</div>
+
+      {% if doc.comments %}
+      <div class="border-t border-slate-200 bg-amber-50/50 px-4 py-3">
+        <h3 class="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-800">Comments</h3>
+        {% for c in doc.comments %}
+        <div class="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm">
+          <div class="text-xs font-medium text-amber-900">
+            <sup class="cref">{{ c.id }}</sup> {{ c.author }}{% if c.initials %} ({{ c.initials }}){% endif %}
+          </div>
+          <div class="mt-1 text-slate-700">{{ c.text }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </section>
+</div>
+
+{% endblock %}

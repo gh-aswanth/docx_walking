@@ -32,6 +32,7 @@ DOCS = [
     ROOT / "CONTRIBUTING.md",
     ROOT / "examples" / "README.md",
     ROOT / "examples" / "data" / "README.md",
+    ROOT / "docx_redline" / "web" / "README.md",
 ]
 
 #: Modules that moved when the package was split. A bare `x.py` in the prose now

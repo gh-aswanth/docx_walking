@@ -204,6 +204,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="do not write each action's rationale into the .docx as a comment",
     )
 
+    p = sub.add_parser(
+        "serve",
+        help="run the demo server: every example, and the .docx it produced",
+    )
+    p.add_argument("--host", default="127.0.0.1")
+    p.add_argument("--port", type=int, default=8000)
+    p.add_argument("--reload", action="store_true", help="restart on code changes")
+
     p = sub.add_parser("doctor", help="check credentials, model and latency with one tiny call")
     p.add_argument("--provider", default="openai", choices=["claude", "openai"])
     p.add_argument("--model", default=None)
@@ -521,6 +529,22 @@ def main(argv: list[str] | None = None) -> int:
             )
         print(f"\nwrote {args.output}")
         return 0 if result.ok else 1
+
+    if args.command == "serve":
+        # Imported here, not at module scope: the web extra is optional and the
+        # rest of the CLI must work without FastAPI installed.
+        try:
+            from .web.main import serve
+        except ModuleNotFoundError as exc:
+            print(
+                f"error: the demo server needs the web extra ({exc.name} is missing)\n"
+                "       pip install 'docx-redline[web]'",
+                file=sys.stderr,
+            )
+            return 2
+        print(f"serving on http://{args.host}:{args.port}")
+        serve(host=args.host, port=args.port, reload=args.reload)
+        return 0
 
     if args.command == "doctor":
         return _doctor(args)

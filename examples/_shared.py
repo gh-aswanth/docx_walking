@@ -28,8 +28,11 @@ sys.path.insert(0, str(ROOT))
 DATA = Path(__file__).resolve().parent / "data"
 SOURCE = DATA / "Sample_Software_License_Agreement.docx"
 PLAN = DATA / "action_items.json"
-OUT = Path(__file__).resolve().parent / "output"
-OUT.mkdir(exist_ok=True)
+# Overridable so the examples can run somewhere writable -- a serverless
+# filesystem is read-only apart from /tmp, and the web demo runs each example
+# into a scratch directory rather than the repo.
+OUT = Path(os.environ.get("DOCX_REDLINE_OUT") or Path(__file__).resolve().parent / "output")
+OUT.mkdir(parents=True, exist_ok=True)
 
 AUTHOR = "Outside Counsel"
 
@@ -55,7 +58,13 @@ def fresh(**kwargs):
 def save(rl, name: str) -> Path:
     path = OUT / name
     rl.save(path)
-    print(f"\nwrote {path.relative_to(ROOT)}")
+    # OUT is overridable, so it is not always inside the repo -- print a
+    # relative path when it is, and the full one when it is not.
+    try:
+        shown = path.relative_to(ROOT)
+    except ValueError:
+        shown = path
+    print(f"\nwrote {shown}")
     return path
 
 

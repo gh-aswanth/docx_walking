@@ -30,6 +30,22 @@ rl.save("contract_redlined.docx")
 
 ---
 
+## Try it
+
+[`docx_redline/web/`](docx_redline/web/) is a FastAPI server that runs all 26
+examples and renders the `.docx` each one wrote — tracked changes, comments and
+all — straight from the OOXML, no LibreOffice required. It ships **inside the
+package**, so it needs no checkout:
+
+```bash
+pip install "docx-redline[web]"
+docx-redline serve
+```
+
+It deploys to Vercel on every push to `main`, once CI is green.
+
+---
+
 ## What it produces
 
 Every image below is rendered from the real file the matching example writes —
@@ -119,11 +135,12 @@ Start with the [index](docs/README.md) for the system-level picture.
 ## Install
 
 ```bash
-uv sync                       # everything, including the SDKs the suite exercises
-uv sync --no-dev              # runtime only: lxml + python-docx
+uv sync                       # everything: the SDKs the suite exercises, and the demo
+uv sync --no-dev              # runtime only: lxml + python-docx + python-dotenv
 
-pip install docx-redline          # runtime only
+pip install docx-redline          # the library
 pip install 'docx-redline[llm]'   # + the anthropic and openai SDKs
+pip install 'docx-redline[web]'   # + the demo server, then: docx-redline serve
 ```
 
 Requires Python ≥ 3.12. Two runtime dependencies, `lxml` and `python-docx`

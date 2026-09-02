@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}docx-redline{% endblock %}</title>
+  <meta name="description" content="Production-grade Word tracked changes for .docx — every example, run live.">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        colors: { ink: '#0f172a', paper: '#fdfdfc' },
+        fontFamily: { serif: ['Georgia', 'Cambria', 'serif'] },
+      }},
+    }
+  </script>
+  <link rel="stylesheet" href="/static/app.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>📝</text></svg>">
+</head>
+<body class="h-full bg-slate-50 text-slate-800 antialiased">
+
+<header class="sticky top-0 z-20 border-b border-slate-200 bg-white/85 backdrop-blur">
+  <div class="mx-auto flex max-w-7xl items-center gap-4 px-5 py-3">
+    <a href="/" class="flex items-baseline gap-2 font-semibold text-ink hover:opacity-70">
+      <span class="text-lg">docx-redline</span>
+      <span class="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-normal text-slate-500">v{{ version }}</span>
+    </a>
+    <span class="hidden text-sm text-slate-400 sm:inline">real Word revision markup, not strikethrough formatting</span>
+    <nav class="ml-auto flex items-center gap-4 text-sm">
+      <a class="text-slate-500 hover:text-ink" href="/docs">API</a>
+      <a class="text-slate-500 hover:text-ink"
+         href="https://github.com/gh-aswanth/docx_walking">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main class="mx-auto max-w-7xl px-5 py-8">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="mx-auto max-w-7xl px-5 py-10 text-sm text-slate-400">
+  Every example on this page is executed on request — nothing here is a canned
+  screenshot. MPL-2.0.
+</footer>
+{% block scripts %}{% endblock %}
+</body>
+</html>

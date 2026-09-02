@@ -10,4 +10,4 @@
 
 # Generated -- don't count it in language stats or show it in diffs by default.
 uv.lock          linguist-generated=true -diff
-requirements.txt linguist-generated=true -diff
+requirements-lock.txt linguist-generated=true -diff

@@ -1,0 +1,56 @@
+/* The document pane. Tailwind handles the chrome; this is the paper. */
+.doc {
+  font-family: Georgia, Cambria, "Times New Roman", serif;
+  font-size: 15px;
+  line-height: 1.65;
+  color: #1f2937;
+}
+.doc .para { margin: 0 0 .7em; position: relative; padding-left: .75rem; }
+
+/* Word's change bar: a rule in the margin beside anything that moved. */
+.doc .para.changed::before {
+  content: ""; position: absolute; left: 0; top: .15em; bottom: .15em;
+  width: 2px; background: #64748b;
+}
+
+/* Headings need their own line-height: inheriting 1.65 at a larger font-size
+   leaves a line box shorter than the glyphs, and the next paragraph rides up
+   into it. */
+.doc .h-1 { font-size: 1.3em;  line-height: 1.35; font-weight: 700; color: #1e3a8a; margin: 1.6em 0 .8em; }
+.doc .h-2 { font-size: 1.12em; line-height: 1.4;  font-weight: 700; color: #1e40af; margin: 1.4em 0 .7em; }
+.doc .h-3, .doc .h-4 { line-height: 1.45; font-weight: 700; margin: 1.1em 0 .45em; }
+
+/* Revisions, coloured the way a review pane colours them. */
+.doc ins.rev-ins       { text-decoration: underline; color: #1d4ed8; background: #eff6ff; }
+.doc del.rev-del       { text-decoration: line-through; color: #b45309; background: #fffbeb; }
+.doc .rev-move-from    { text-decoration: line-through; color: #047857; background: #ecfdf5; }
+.doc .rev-move-to      { text-decoration: underline;    color: #047857; background: #ecfdf5; }
+.doc .rev-format       { border-bottom: 2px dotted #a855f7; }
+
+.doc .mark-ins { border-left: 2px solid #1d4ed8; }
+.doc .mark-del { border-left: 2px solid #b45309; }
+
+.doc .cref {
+  margin-left: 2px; padding: 0 4px; border-radius: 4px;
+  background: #fef08a; color: #713f12; font-size: .7em; font-family: ui-sans-serif, sans-serif;
+  cursor: default;
+}
+
+.doc-table { border-collapse: collapse; margin: 1em 0; width: 100%; font-size: .95em; }
+.doc-table td { border: 1px solid #cbd5e1; padding: .45rem .6rem; vertical-align: top; }
+.doc-table .row-ins td { background: #eff6ff; }
+.doc-table .row-del td { background: #fffbeb; text-decoration: line-through; }
+
+/* Console output keeps its alignment. */
+.console {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px; line-height: 1.55; white-space: pre; tab-size: 4;
+}
+
+/* The revision the reader was just taken to. */
+.doc .focus-change {
+  background: #f8fafc;
+  outline: 2px solid #cbd5e1;
+  outline-offset: 4px;
+  border-radius: 3px;
+}

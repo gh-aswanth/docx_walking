@@ -61,7 +61,7 @@ repos:
     hooks:
       - id: uv-lock
       - id: uv-export
-        args: [--frozen, --no-dev, --output-file=requirements.txt]
+        args: [--frozen, --no-dev, --output-file=requirements-lock.txt]
 
   # --- the docs: fences, links, mermaid labels, stale module paths
   - repo: local

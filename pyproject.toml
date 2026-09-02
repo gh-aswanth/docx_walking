@@ -1,12 +1,12 @@
 [project]
 name = "docx-redline"
 description = "Production-grade Word tracked changes (redlines) for .docx files"
-readme = "README.md"
 license = "MPL-2.0"
 license-files = ["LICENSE"]
 requires-python = ">=3.12"
-# Single-sourced from docx_redline/__init__.py -- see [tool.hatch.version].
-dynamic = ["version"]
+# version: single-sourced from docx_redline/__init__.py, see [tool.hatch.version]
+# readme:  README.md with its relative links absolutised, see the fancy-pypi hook
+dynamic = ["version", "readme"]
 authors = [{ name = "Aswanth", email = "aswanth.babu@outlook.com" }]
 keywords = [
     "docx",
@@ -32,7 +32,6 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "httpx>=0.28.1",
     "lxml>=6.1.2",
     "python-docx>=1.2.0",
     "python-dotenv>=1.2.3",
@@ -55,6 +54,15 @@ llm = [
     "openai>=3.6.0",
 ]
 
+# The demo server in docx_redline/web. Its templates, stylesheet and the example
+# scripts it runs all ship inside the wheel, so this is the whole thing:
+#     pip install "docx-redline[web]" && docx-redline serve
+web = [
+    "fastapi>=0.115",
+    "jinja2>=3.1",
+    "uvicorn[standard]>=0.30",
+]
+
 [project.scripts]
 docx-redline = "docx_redline.cli:_entry"
 # Same command under the module spelling, so `uv run docx_redline ...` works
@@ -66,7 +74,8 @@ docx_redline = "docx_redline.cli:_entry"
 # exercises the Claude and OpenAI plumbing, so it needs their SDKs. Referencing
 # the extra rather than restating the pins keeps one source of truth.
 dev = [
-    "docx-redline[llm]",
+    "docx-redline[llm,web]",
+    "httpx>=0.28",   # tests/test_reviewers.py mocks both SDKs through it
     "isort>=9.0.1",
     "mypy>=2.3.1",
     "pre-commit>=4.6.2",
@@ -74,9 +83,8 @@ dev = [
     "pytest>=9.1.1",
     "ruff>=0.16.5",
 ]
-
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-fancy-pypi-readme"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
@@ -84,9 +92,41 @@ build-backend = "hatchling.build"
 # `docx_redline.__version__` can never disagree.
 path = "docx_redline/__init__.py"
 
+# PyPI renders the README with no access to the repository, so every relative
+# path in it -- 9 images and 32 links -- resolves to nothing. Rather than paste
+# absolute URLs into the file (which would then point at upstream `main` even
+# when the README is read on a fork or a branch), rewrite them here, at build
+# time. GitHub keeps working relative links; PyPI gets absolute ones.
+[tool.hatch.metadata.hooks.fancy-pypi-readme]
+content-type = "text/markdown"
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
+path = "README.md"
+
+# Images first: they need raw.githubusercontent, not the blob viewer.
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
+pattern = '!\[([^\]]*)\]\((?!https?://)([^)]+)\)'
+replacement = '![\1](https://raw.githubusercontent.com/gh-aswanth/docx_walking/main/\2)'
+
+# Then every remaining relative target. Matching on `](...)` alone rather than
+# on the whole link also catches a badge, where an image is nested inside the
+# link and the label itself contains brackets: [![alt](img)](LICENSE).
+# The lookahead skips the image URLs just written above.
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
+pattern = '\]\((?!https?://|#|mailto:)([^)]+)\)'
+replacement = '](https://github.com/gh-aswanth/docx_walking/blob/main/\1)'
+
 [tool.hatch.build.targets.wheel]
-# The four subpackages come along with it; hatchling recurses.
+# The subpackages come along with it; hatchling recurses, and non-Python files
+# inside the package (web/templates, web/static) are included as package data.
 packages = ["docx_redline"]
+
+[tool.hatch.build.targets.wheel.force-include]
+# The demo runs the real example scripts. They live at the repository root so
+# the tests, CI and the docs can reach them; map them into the package so an
+# installed `docx-redline[web]` is self-contained rather than depending on a
+# checkout that is not there.
+"examples" = "docx_redline/web/examples"
 
 [tool.hatch.build.targets.sdist]
 # Ship what someone needs to verify the library: the package, the suite that
@@ -96,6 +136,9 @@ include = [
     "tests",
     "examples",
     "docs",
+    "webapp",
+    "api",
+    "vercel.json",
     "README.md",
     "CONTRIBUTING.md",
     "LICENSE",

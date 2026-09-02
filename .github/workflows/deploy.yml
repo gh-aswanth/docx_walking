@@ -1,0 +1,104 @@
+name: Deploy
+
+# Every push to main, once the full gate is green.
+#
+# Vercel's own Git integration would deploy on push too, but it deploys
+# *regardless* of whether the tests passed. Driving the CLI from here instead
+# means a red build never reaches production.
+on:
+  push:
+    branches: [main]
+  pull_request:            # preview URL on every PR
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: quality gate
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: ${{ github.event_name == 'push' && 'production' || 'preview' }}
+    needs: gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write     # to leave the preview URL on the PR
+    environment:
+      name: ${{ github.event_name == 'push' && 'production' || 'preview' }}
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: refuse early if the deploy is not configured
+        run: |
+          missing=
+          [ -n "${{ secrets.VERCEL_TOKEN }}" ]      || missing="$missing VERCEL_TOKEN"
+          [ -n "$VERCEL_ORG_ID" ]                   || missing="$missing VERCEL_ORG_ID"
+          [ -n "$VERCEL_PROJECT_ID" ]               || missing="$missing VERCEL_PROJECT_ID"
+          if [ -n "$missing" ]; then
+            echo "::error::missing repository secret(s):$missing"
+            echo "Run \`vercel link\` locally, then copy the ids out of .vercel/project.json"
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm install --global vercel@latest
+
+      - name: pull the environment
+        run: |
+          vercel pull --yes \
+            --environment=${{ github.event_name == 'push' && 'production' || 'preview' }} \
+            --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: build
+        run: vercel build ${{ github.event_name == 'push' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: deploy
+        id: deploy
+        run: |
+          url=$(vercel deploy --prebuilt \
+            ${{ github.event_name == 'push' && '--prod' || '' }} \
+            --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "### Deployed to $url" >> "$GITHUB_STEP_SUMMARY"
+
+      # A deployment that 500s is not a deployment. Check before declaring it.
+      - name: the deployment actually serves
+        run: |
+          for path in /healthz / /e/01_quickstart; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 45 \
+                   "${{ steps.deploy.outputs.url }}$path")
+            echo "  $code  $path"
+            [ "$code" = "200" ] || { echo "::error::$path returned $code"; exit 1; }
+          done
+
+      - name: comment the preview URL on the PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = '${{ steps.deploy.outputs.url }}';
+            const marker = '<!-- vercel-preview -->';
+            const body = `${marker}\n**Preview:** ${url}\n\nEvery example runs live there.`;
+            const { data: comments } = await github.rest.issues.listComments({
+              ...context.repo, issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number, body });
+            }
