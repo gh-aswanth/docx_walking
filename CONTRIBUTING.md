@@ -61,6 +61,36 @@ sides come out ahead of a fork nobody can see.
    change an option, update the example that demonstrates it —
    `python examples/run_all.py` fails the build if one stops running.
 
+## Releasing
+
+Tag the commit. Everything else is automatic:
+
+```bash
+git tag v1.0.0 && git push origin v1.0.0
+```
+
+| Job | Does |
+|---|---|
+| `gate` | calls `ci.yml` — the same 8 jobs a PR runs, including `uv build` and the clean-venv install |
+| `verify` | the tag, `docx_redline.__version__` and the built wheel must all agree; `twine check --strict` |
+| `publish` | `uv publish --trusted-publishing always` |
+| `github-release` | `gh release create` with the artefacts attached and generated notes |
+
+Nothing is built twice — `gate` produces `dist/`, and a reusable workflow shares
+the caller's run, so the later jobs download that artefact.
+
+**Rehearsing.** Run the workflow by hand from the Actions tab with `dry_run`
+left on: the gate and the version check run, nothing is published. Worth doing,
+because PyPI will not let you re-upload a version number even after deleting it.
+
+**One-time setup on PyPI.** Add a trusted publisher — owner `gh-aswanth`, repo
+`docx_walking`, workflow `release.yml`, environment `pypi`. That is what lets
+`uv publish` authenticate by OIDC instead of an API token, so there is no
+long-lived secret in the repo. Add required reviewers to the `pypi` environment
+in repo settings and a release becomes a two-person action.
+
+---
+
 ## Layout
 
 Four subpackages, strictly layered, and a test asserts it. Each may import

@@ -19,7 +19,7 @@ keywords = [
     "python-docx",
 ]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Legal Industry",
     "Operating System :: OS Independent",
@@ -37,6 +37,14 @@ dependencies = [
     "python-docx>=1.2.0",
     "python-dotenv>=1.2.3",
 ]
+
+[project.urls]
+# These become the sidebar links on the PyPI project page.
+Homepage = "https://github.com/gh-aswanth/docx_walking"
+Repository = "https://github.com/gh-aswanth/docx_walking"
+Issues = "https://github.com/gh-aswanth/docx_walking/issues"
+Documentation = "https://github.com/gh-aswanth/docx_walking/tree/main/docs"
+Changelog = "https://github.com/gh-aswanth/docx_walking/releases"
 
 [project.optional-dependencies]
 # Only needed for `--reviewer claude` / `--reviewer openai`. Both SDKs are

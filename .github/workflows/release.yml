@@ -1,0 +1,109 @@
+name: Release
+
+# Publish by tagging:  git tag v1.0.0 && git push origin v1.0.0
+#
+# Or run it by hand from the Actions tab: `dry_run` (the default) runs the whole
+# gate and the version check but publishes nothing. That is how to rehearse a
+# release without spending a version number -- PyPI will not let you re-upload
+# one, even after a delete.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run the gate and verify, but do not publish"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Calls the CI workflow rather than restating it, so the release gate and the
+  # PR gate cannot drift apart. It already runs `uv build`, checks the metadata,
+  # installs the wheel into a clean environment, and uploads dist/ -- a reusable
+  # workflow shares the caller's run, so the jobs below reuse that artefact
+  # instead of building the same thing a second time.
+  gate:
+    name: quality gate
+    uses: ./.github/workflows/ci.yml
+
+  verify:
+    name: the tag matches the package
+    needs: gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      # A tag that disagrees with the package is how the wrong thing gets
+      # published under the right name. Refuse before it can happen.
+      - name: tag == docx_redline.__version__ == the built artefacts
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(uv run --no-project python -c '
+          import pathlib, re
+          text = pathlib.Path("docx_redline/__init__.py").read_text(encoding="utf-8")
+          print(re.search(r"__version__ = \"([^\"]+)\"", text).group(1))
+          ')"
+          echo "tag=$tag  package=$pkg"
+          [ "$tag" = "$pkg" ] || { echo "::error::tag v$tag != __version__ $pkg"; exit 1; }
+          # ...and that the wheel CI built carries the same number.
+          ls dist/
+          ls "dist/docx_redline-$pkg-py3-none-any.whl" >/dev/null \
+            || { echo "::error::no wheel for $pkg in dist/"; exit 1; }
+
+      - name: what would be published
+        run: uvx twine check --strict dist/*
+
+  publish:
+    name: uv publish → PyPI
+    needs: verify
+    if: startsWith(github.ref, 'refs/tags/') && !inputs.dry_run
+    runs-on: ubuntu-latest
+    environment:
+      # Add required reviewers to this environment in repo settings and a
+      # release becomes a two-person action.
+      name: pypi
+      url: https://pypi.org/p/docx-redline
+    permissions:
+      # Trusted publishing: PyPI verifies this workflow's OIDC identity, so
+      # there is no long-lived API token to leak, rotate, or scope wrongly.
+      id-token: write
+    steps:
+      - uses: astral-sh/setup-uv@v7
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: uv publish
+        run: uv publish --trusted-publishing always dist/*
+
+  github-release:
+    name: GitHub release
+    needs: publish
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0        # --generate-notes diffs against the previous tag
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: create the release with the artefacts attached
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes
