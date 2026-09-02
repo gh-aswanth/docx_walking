@@ -16,6 +16,11 @@ on:
         type: boolean
         default: true
 
+# A release is never worth cancelling half-way; queue instead of replacing.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
 

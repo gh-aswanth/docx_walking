@@ -1,18 +1,22 @@
 name: CI
 
+# Deliberately NOT triggered by push or pull_request. `deploy.yml` runs on both
+# and calls this workflow as its gate, so a direct trigger would start a second,
+# identical run -- and because both landed in the same concurrency group, the
+# two cancelled each other ("Cancelled after 1s" on every job).
+#
+# One CI run per event, and it is the gate that decides whether the deploy or
+# the release proceeds.
 on:
-  push:
-    branches: [main]
-  pull_request:
   workflow_dispatch:
-  # Called by release.yml so a publish runs this exact gate rather than a copy
-  # of it that can drift.
   workflow_call:
 
 # A new push supersedes the run it interrupted; nothing is learned by finishing
 # a check against code that has already moved on.
+# `github.workflow` is the *calling* workflow's name when this runs via
+# workflow_call, so Deploy's gate and Release's gate never collide.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
