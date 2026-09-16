@@ -164,9 +164,9 @@ flowchart LR
 ```
 
 ```python
-rl.accept(ids=["101", "102"])  # by the w:id summary() reports
+rl.accept(ids=["101", "102"])          # by the w:id summary() reports
 rl.reject(authors="Opposing Counsel")  # by who proposed it
-rl.accept(kinds="format")  # by what kind of change it is
+rl.accept(kinds="format")              # by what kind of change it is
 ```
 
 The widening step is not optional. A move is *two* elements recording *one*
