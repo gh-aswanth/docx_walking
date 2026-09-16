@@ -145,7 +145,7 @@ __all__ = [  # noqa: RUF022 -- grouped by layer, not alphabetically
     "reject_file",
 ]
 
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 
 
 def accept_file(source, output, ids=None, authors=None, kinds=None, where=None):
