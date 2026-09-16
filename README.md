@@ -152,7 +152,7 @@ the reviewers, so the core install never reaches for them.
 
 ```bash
 uv run python examples/run_all.py     # 26 examples, every option, as a smoke test
-uv run pytest -q                      # 350 unit tests
+uv run pytest -q                      # 386 unit tests
 ```
 
 The demo applies **every** operation to a real contract, writes the files to
@@ -262,6 +262,7 @@ Redliner(
 | **Comment** | `add_comment` | `w:comment` (python-docx ≥ 1.2) |
 | **Compare** two files | `redline_files`, `compare_documents` | full document diff |
 | **Review** | `accept_all`, `reject_all`, `summary`, `text` | resolves / reports |
+| **Review** one item | `accept(ids=...)`, `reject(ids=...)` | resolves a selection, leaves the rest tracked |
 
 ### Every signature
 
@@ -317,6 +318,8 @@ rl.add_comment(paragraph, text, runs=None, author=None, initials=None)
 rl.enable_track_changes(enabled=True)
 rl.summary()                                           -> RevisionSummary
 rl.accept_all() / rl.reject_all()                      -> Redliner
+rl.accept(ids=None, authors=None, kinds=None, where=None)               -> Redliner
+rl.reject(ids=None, authors=None, kinds=None, where=None)               -> Redliner
 rl.save(path)                                          -> Path
 ```
 
@@ -1188,10 +1191,12 @@ unreadable word-by-word diff.
 ## Reviewing what is already there
 
 ```python
-from docx_redline import accept_file, reject_file, summarize
+from docx_redline import Redliner, accept_file, reject_file
 
-rl.summary().format(limit=10)  # human-readable
-rl.summary().to_dict()  # counts by type and author
+rl = Redliner("redlined.docx", track_changes=False)
+print(rl.summary().format(limit=10))  # human-readable
+rl.summary().counts  # Counter, by kind
+rl.summary().authors  # Counter, by author
 accept_file("redlined.docx", "final.docx")
 reject_file("redlined.docx", "reverted.docx")
 ```
@@ -1209,7 +1214,80 @@ reject_file("redlined.docx", "reverted.docx")
   row-insert             1
   row-delete             1
   authors: AI Contract Reviewer (168)
+
+  #101 [delete] body: thirty (30) days
+  #102 [insert] body: forty-five (45) days
+  ...
 ```
+
+### Accepting one change at a time
+
+`accept_all` / `reject_all` are all-or-nothing. `accept` and `reject` take the
+same four filters and resolve **only** what matches; everything else stays live
+tracked markup that Word still shows in its review pane.
+
+```python
+rl = Redliner("redlined.docx", track_changes=False)
+
+for rev in rl.summary().revisions:
+    print(rev.id, rev.kind, rev.author, rev.text[:40])
+
+rl.accept(ids=["101", "102"])              # two revisions, by w:id
+rl.reject(authors="Opposing Counsel")      # everything one reviewer proposed
+rl.accept(kinds="format")                  # all the formatting-only changes
+rl.reject(where=lambda r: "indemnif" in r.text.lower())
+rl.save("partially-resolved.docx")
+```
+
+| Filter | Takes | Matches |
+| --- | --- | --- |
+| `ids` | one value or an iterable, `str` or `int` | `Revision.id`, the OOXML `w:id` |
+| `authors` | one name or an iterable | `Revision.author`, exactly |
+| `kinds` | one kind or an iterable | `Revision.kind`, or a family alias |
+| `where` | `Callable[[Revision], bool]` | anything the other three cannot express |
+
+Filters combine with **AND**; the values inside one filter combine with **OR**.
+`rl.accept()` with no filter is exactly `rl.accept_all()`.
+
+`kinds` matches a `Revision.kind` — `insert`, `delete`, `move-from`, `move-to`,
+`paragraph-mark-insert`, `paragraph-mark-delete`, `row-insert`, `row-delete`,
+`format:rPrChange` and friends — or one of four family aliases: `format`,
+`move`, `insert-any`, `delete-any` (the `-any` pair also catch the
+paragraph-mark and row variants).
+
+Three things worth knowing:
+
+- **Ids come from the document, not from a counter you keep.** They are the
+  `w:id` attributes already in the file, so they survive a save/reopen and mean
+  the same thing to Word. `summary().ids` lists them; `summary().by_id(n)` looks
+  one up.
+- **A move always resolves as a pair.** Naming either half — or the range
+  marker that labels it — pulls in the other. Taking one alone would duplicate
+  the moved text or lose it outright, so the library will not do it.
+- **A paragraph mark is its own revision.** Inserting a paragraph produces a
+  content `w:ins` *and* a `w:ins` on the ¶ mark, with separate ids. Accept only
+  the first and the text is kept while the mark stays under review — which is
+  legal, and occasionally what you want. Pass both ids for the whole paragraph.
+
+The file-level helpers take the same filters:
+
+```python
+accept_file("redlined.docx", "partial.docx", authors="Legal")
+reject_file("redlined.docx", "partial.docx", kinds="format")
+```
+
+And so does the CLI:
+
+```bash
+python -m docx_redline summary redlined.docx --json | jq '.[] | {id, kind, text}'
+python -m docx_redline accept redlined.docx -o partial.docx --id 101 --id 102
+python -m docx_redline reject redlined.docx -o partial.docx --author "Opposing Counsel"
+python -m docx_redline accept redlined.docx -o partial.docx --kind format,move
+```
+
+`--id`, `--author` and `--kind` are each repeatable and each accept a
+comma-separated list. With none of them, `accept` and `reject` resolve
+everything, as before.
 
 ---
 
@@ -1323,8 +1401,8 @@ Same shape as `full`, minus the chunked and inline-action flags:
 ```bash
 python -m docx_redline compare v1.docx v2.docx -o redline.docx [--author N] [--date D] [--similarity 0.45]
 python -m docx_redline apply contract.docx plan.json -o redlined.docx [--author N] [--date D] [--lenient]
-python -m docx_redline accept redlined.docx -o final.docx
-python -m docx_redline reject redlined.docx -o reverted.docx
+python -m docx_redline accept redlined.docx -o final.docx [--id N] [--author N] [--kind K]
+python -m docx_redline reject redlined.docx -o reverted.docx [--id N] [--author N] [--kind K]
 python -m docx_redline summary redlined.docx [--limit N] [--json]
 python -m docx_redline validate plan.json
 python -m docx_redline doctor [--provider claude|openai] [--model M] [--effort E] [--timeout S]
@@ -1334,7 +1412,7 @@ python -m docx_redline doctor [--provider claude|openai] [--model M] [--effort E
 | --- | --- |
 | `compare` | Word-Compare two files into one redline |
 | `apply` | run a declarative op plan; `--lenient` tolerates an op that matches nothing |
-| `accept` / `reject` | resolve every tracked change one way or the other |
+| `accept` / `reject` | resolve tracked changes; unfiltered takes all of them, `--id` / `--author` / `--kind` narrow it |
 | `summary` | list revisions; `--json` for machine-readable, `--limit` caps the listing |
 | `validate` | schema-check a plan without opening a document |
 | `doctor` | one tiny call to check credentials, model and latency |
@@ -1394,6 +1472,13 @@ reason.
 **Verification is the feature.** `accept_all` / `reject_all` are not just
 conveniences; they are how the test suite proves correctness without a copy of
 Word. Every test asserts both directions.
+
+**Selective resolution is filtered resolution, not a second engine.** `accept`
+and `reject` walk the same passes as `accept_all`; a selector only narrows which
+elements each pass touches, and `select=None` short-circuits the bookkeeping
+back to the original code path. One consequence is a hard rule: a `w:moveFrom`
+and its `w:moveTo` are two elements recording *one* edit, so the selection is
+widened to cover both before anything is resolved.
 
 **Locating and applying are separate passes.** In `ParagraphIndex.apply`,
 nothing is written until every item has been located. Locate lazily and the
@@ -1484,7 +1569,7 @@ but everything the public API needs is re-exported from the top-level package.
 examples/                 26 runnable examples, one per topic + run_all.py
   data/                     the sample contract and the 29-item worked plan
   output/                   what the examples write (gitignored)
-tests/                    pytest suite (350 tests)
+tests/                    pytest suite (386 tests)
 docs/                     nine workflow documents, one diagram each
   images/                   README screenshots, generated from examples/output/
 scripts/screenshots.py    .docx -> PDF -> PNG, for the gallery above

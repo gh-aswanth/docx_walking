@@ -140,7 +140,7 @@ docx_redline/
     pipeline.py                 the staged pipeline and full_redline
 ```
 
-**350 tests** in `tests/`, **26 runnable examples** in `examples/`. The invariant
+**386 tests** in `tests/`, **26 runnable examples** in `examples/`. The invariant
 nearly all of them lean on:
 
 > `accept(redline)` is the intended new document.

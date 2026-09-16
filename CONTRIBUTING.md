@@ -32,7 +32,9 @@ sides come out ahead of a fork nobody can see.
 2. **Both directions asserted.** `accept_all()` and `reject_all()` are how this
    library proves correctness without a copy of Word. A redline is only right if
    accepting it produces the intended document *and* rejecting it restores the
-   original.
+   original. Anything touching selective review (`accept(ids=...)` and friends)
+   owes a third assertion: whatever is left unresolved must still satisfy both
+   directions on its own.
 3. **The whole gate green.**
 
    ```bash
@@ -41,7 +43,7 @@ sides come out ahead of a fork nobody can see.
    uv run pre-commit run --all-files
    ```
 
-   That runs ruff (lint + format), isort, mypy, `uv lock --check`, the 350-test
+   That runs ruff (lint + format), isort, mypy, `uv lock --check`, the 386-test
    suite, and all 26 examples. All of it must pass.
 
    CI runs *this exact command*, not a copy of it — the `quality` job is

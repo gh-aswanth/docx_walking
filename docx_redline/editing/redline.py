@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import copy
 import re
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -706,15 +706,58 @@ class Redliner:
             total.revisions.extend(review.summarize(root, part=name).revisions)
         return total
 
-    def accept_all(self) -> Redliner:
+    def accept(
+        self,
+        ids=None,
+        authors=None,
+        kinds=None,
+        where: Callable[[review.Revision], bool] | None = None,
+    ) -> Redliner:
+        """Apply the matching tracked changes; the rest stay live markup.
+
+        With no filter this is :meth:`accept_all`.  ``ids`` are the ``w:id``
+        values :meth:`summary` reports, ``authors`` and ``kinds`` the matching
+        :class:`~docx_redline.editing.review.Revision` fields, and ``where`` a
+        predicate over the whole ``Revision``.  Each takes one value or an
+        iterable; the criteria combine with AND.
+
+        Both halves of a move resolve together even when only one is named --
+        taking one alone would duplicate or lose the moved text.
+        """
+        return self._review(review.accept, ids, authors, kinds, where)
+
+    def reject(
+        self,
+        ids=None,
+        authors=None,
+        kinds=None,
+        where: Callable[[review.Revision], bool] | None = None,
+    ) -> Redliner:
+        """Discard the matching tracked changes; the rest stay live markup.
+
+        Same filters as :meth:`accept`; with none, this is :meth:`reject_all`.
+        """
+        return self._review(review.reject, ids, authors, kinds, where)
+
+    def _review(self, resolve, ids, authors, kinds, where) -> Redliner:
         for root in self._all_roots():
-            review.accept_all(root)
+            resolve(
+                root,
+                review.make_selector(
+                    ids=ids,
+                    authors=authors,
+                    kinds=kinds,
+                    where=where,
+                    part=root.tag.split("}")[-1],
+                ),
+            )
         return self
 
+    def accept_all(self) -> Redliner:
+        return self.accept()
+
     def reject_all(self) -> Redliner:
-        for root in self._all_roots():
-            review.reject_all(root)
-        return self
+        return self.reject()
 
     def text(self) -> str:
         """Current (all-markup-accepted) body text -- handy for assertions."""

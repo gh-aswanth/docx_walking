@@ -22,6 +22,13 @@ flowchart LR
 proves the markup is *semantically* right without a copy of Word. Verified to
 survive nested `w:ins`/`w:del` and stacked moves.
 
+The filtered forms, `accept(ids=…)` / `reject(authors=…)`, inherit that proof:
+they run the same passes over a narrowed element set, and the suite asserts the
+property that matters for a partial review — resolving revisions one at a time,
+in report order or reversed, lands on exactly the document `accept_all` would
+have produced, and whatever is left behind is still a valid redline that
+resolves both ways on its own.
+
 ---
 
 ## The seven checks
@@ -125,11 +132,12 @@ in public.
 
 ## The test suite
 
-**350 tests**, in `tests/`. Almost all assert both directions of the round trip.
+**386 tests**, in `tests/`. Almost all assert both directions of the round trip.
 
 | File | Covers |
 |---|---|
 | `test_redline.py` | tracked-change primitives, run splitting, accept/reject |
+| `test_selective_review.py` | resolving by id / author / kind / predicate, move pairing |
 | `test_addressing.py` | clause resolution, insert/delete/reorder correctness |
 | `test_paragraphs.py` | the paragraph address space: folded matching, every rejection, plan fingerprints |
 | `test_segments.py` | structure detection, whole-document rendering, ambiguity |
@@ -143,7 +151,7 @@ Both providers are driven through their **real SDKs** with a mock transport — 
 key, no network, but genuine request serialisation and response parsing.
 
 ```bash
-uv run pytest -q                        # 350 tests
+uv run pytest -q                        # 386 tests
 uv run python examples/run_all.py       # 26 examples, every option, as a smoke test
 uv run pre-commit run --all-files       # the whole gate: lint, types, tests, examples
 ```
