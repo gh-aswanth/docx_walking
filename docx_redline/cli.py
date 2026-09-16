@@ -218,13 +218,33 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--timeout", type=float, default=60.0)
     p.add_argument("--effort", default="low", choices=["low", "medium", "high", "xhigh", "max"])
 
-    p = sub.add_parser("accept", help="accept every tracked change")
-    p.add_argument("source")
-    p.add_argument("-o", "--output", required=True)
-
-    p = sub.add_parser("reject", help="reject every tracked change")
-    p.add_argument("source")
-    p.add_argument("-o", "--output", required=True)
+    for name, verb in (("accept", "accept"), ("reject", "reject")):
+        p = sub.add_parser(name, help=f"{verb} tracked changes (all of them, or a selection)")
+        p.add_argument("source")
+        p.add_argument("-o", "--output", required=True)
+        p.add_argument(
+            "--id",
+            dest="ids",
+            action="append",
+            metavar="ID",
+            help="only this revision w:id (repeatable, or comma-separated); "
+            "see `docx-redline summary`",
+        )
+        p.add_argument(
+            "--author",
+            dest="authors",
+            action="append",
+            metavar="NAME",
+            help="only revisions by this author (repeatable, or comma-separated)",
+        )
+        p.add_argument(
+            "--kind",
+            dest="kinds",
+            action="append",
+            metavar="KIND",
+            help="only this kind: insert, delete, move, format, row-insert, ... "
+            "(repeatable, or comma-separated)",
+        )
 
     p = sub.add_parser("summary", help="list tracked changes in a document")
     p.add_argument("source")
@@ -234,6 +254,13 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("validate", help="check a JSON edit plan without running it")
     p.add_argument("plan")
     return parser
+
+
+def _csv(values: list[str] | None) -> list[str] | None:
+    """Flatten repeated ``--id a --id b,c`` into ``["a", "b", "c"]``."""
+    if not values:
+        return None
+    return [part.strip() for value in values for part in value.split(",") if part.strip()] or None
 
 
 def _load_plan(path: str) -> list[dict]:
@@ -551,9 +578,16 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command in ("accept", "reject"):
         rl = Redliner(args.source, track_changes=False)
-        (rl.accept_all if args.command == "accept" else rl.reject_all)()
+        before = len(rl.summary())
+        resolve = rl.accept if args.command == "accept" else rl.reject
+        resolve(
+            ids=_csv(args.ids),
+            authors=_csv(args.authors),
+            kinds=_csv(args.kinds),
+        )
+        after = len(rl.summary())
         rl.save(args.output)
-        print(f"wrote {args.output}")
+        print(f"wrote {args.output} ({before - after} of {before} change(s) {args.command}ed)")
         return 0
 
     if args.command == "summary":

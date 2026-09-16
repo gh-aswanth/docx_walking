@@ -146,6 +146,40 @@ accept, the reverse to reject, merging paragraphs where a ¶ mark disappears.
 
 ---
 
+## Resolving one change at a time
+
+A human reviewer does not accept a document; they accept a *line*. So the same
+passes run behind a filter:
+
+```mermaid
+flowchart LR
+    S["summary()<br/><i>every revision, with its w:id</i>"] --> SEL{"select"}
+    SEL -->|"ids · authors · kinds · where"| PLAN["widen to whole moves"]
+    PLAN --> RES["resolve only those elements"]
+    RES --> OUT[["the rest stay<br/><b>live tracked markup</b>"]]
+    SEL -->|"no filter"| ALL["accept_all / reject_all<br/><i>fast path, no bookkeeping</i>"]
+
+    style OUT fill:#e6f4ea,stroke:#34a853
+    style PLAN fill:#fef7e0,stroke:#f9ab00
+```
+
+```python
+rl.accept(ids=["101", "102"])          # by the w:id summary() reports
+rl.reject(authors="Opposing Counsel")  # by who proposed it
+rl.accept(kinds="format")              # by what kind of change it is
+```
+
+The widening step is not optional. A move is *two* elements recording *one*
+edit: resolve the `w:moveFrom` without its `w:moveTo` and the moved text is
+duplicated or lost. Naming either half — or the range marker labelling it —
+pulls in the other before anything is written.
+
+A paragraph mark, by contrast, deliberately stays separate. `w:ins` on the runs
+and `w:ins` on the ¶ mark are two revisions in OOXML and two rows in Word's
+review pane, so they get two ids here too.
+
+---
+
 ## Where to look
 
 | | |
@@ -153,6 +187,6 @@ accept, the reverse to reject, merging paragraphs where a ¶ mark disappears.
 | `oxml/textmap.py` | flat character map, run splitting |
 | `oxml/edits.py` | `w:ins` / `w:del` / ¶-marks / rows / `*PrChange` |
 | `editing/redline.py` | `Redliner` — the public API |
-| `editing/review.py` | `accept_all` / `reject_all` / `summarize` |
+| `editing/review.py` | `accept` / `reject` / `make_selector` / `summarize` |
 
 **Next:** [Document structure →](02-document-structure.md)

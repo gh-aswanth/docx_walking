@@ -27,7 +27,7 @@ example that stops running is a README that has started lying.
 | 07 | [tables](07_tables.py) | `tables` `insert_table_row` `delete_table_row` `delete_row` `set_cell_text` |
 | 08 | [formatting](08_formatting.py) | every run and paragraph prop; `format_runs/matching/paragraph_text/paragraph`; `apply_style` vs `format_paragraph(style=)` |
 | 09 | [comments](09_comments.py) | `add_comment` whole-paragraph, `runs=`, `author=`/`initials=`, commenting on a strikeout |
-| 10 | [review](10_review_accept_reject.py) | `summary` `counts` `authors` `accept_all` `reject_all` `accept_file` `reject_file`; stacking authors |
+| 10 | [review](10_review_accept_reject.py) | `summary` `counts` `authors` `ids` `by_id` `accept_all` `reject_all`; selective `accept(ids=/authors=/kinds=/where=)` and `reject(...)`; `accept_file` `reject_file`; stacking authors |
 
 ## Layer 2 — `ParagraphIndex`
 

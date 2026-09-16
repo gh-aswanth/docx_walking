@@ -2,11 +2,14 @@
 
     summary()                    -> RevisionSummary
     accept_all() / reject_all()  -> Redliner
-    accept_file(src, out) / reject_file(src, out)
+    accept(ids=, authors=, kinds=, where=)  -> Redliner   # and reject(...)
+    accept_file(src, out, ids=...) / reject_file(src, out, ...)
     summarize(root, part=...)    the module-level form
 
 accept/reject are not just conveniences -- they are how correctness is proved
-without a copy of Word.
+without a copy of Word.  The filtered forms resolve a *selection* and leave
+everything else as live tracked markup, which is what a partial human review
+hands back.
 """
 
 from _shared import OUT, SOURCE, banner, fresh, save, section
@@ -34,9 +37,11 @@ section("counts / authors / revisions — the same thing, as data")
 report = rl.summary()
 print("  counts :", dict(report.counts))
 print("  authors:", dict(report.authors))
-print("  fields :", ["kind", "author", "date", "text", "location"])
+print("  fields :", ["kind", "author", "date", "text", "location", "id"])
 first = report.revisions[0]
-print(f"  first  : kind={first.kind!r} author={first.author!r} location={first.location!r}")
+print(f"  first  : id={first.id!r} kind={first.kind!r} location={first.location!r}")
+print("  ids    :", report.ids[:8], "...")
+print("  by_id  :", report.by_id(report.ids[0]).kind)
 
 section("a second author stacks on top of the first")
 path = save(rl, "10_first_pass.docx")
@@ -44,6 +49,7 @@ second = Redliner(path, author="In-House Counsel")
 second.replace_text("forty-five (45) days", "sixty (60) days", count=1)
 print("  authors now:", dict(second.summary().authors))
 print("  ids never collide: the highest existing w:id is scanned on open")
+both = save(second, "10_two_authors.docx")
 
 section("summarize(root) — per part")
 for part, root in (("body", rl.document.element.body),):
@@ -80,3 +86,35 @@ print(
     "  reject(redlined) == original:",
     Redliner(OUT / "10_rejected.docx").text() == Redliner(SOURCE).text(),
 )
+
+section("accept(ids=...) — take one revision, leave the rest under review")
+one = Redliner(both, track_changes=False)
+target = next(r for r in one.summary().revisions if r.kind == "insert" and r.text)
+print(f"  taking #{target.id}: {target.text[:40]!r}")
+one.accept(ids=target.id)
+print("  revisions left:", len(one.summary()), "of", len(Redliner(both).summary()))
+
+section("accept/reject by author, kind, or an arbitrary predicate")
+for label, call in (
+    ("authors='In-House Counsel'", lambda r: r.reject(authors="In-House Counsel")),
+    ("kinds='format'", lambda r: r.accept(kinds="format")),
+    ("kinds='move'  (both halves, always)", lambda r: r.accept(kinds="move")),
+    (
+        "where=lambda rev: 'Delaware' in rev.text",
+        lambda r: r.accept(where=lambda v: "Delaware" in v.text),
+    ),
+):
+    trial = Redliner(both, track_changes=False)
+    start = len(trial.summary())
+    call(trial)
+    print(f"  {label:<42} {start - len(trial.summary())} of {start} resolved")
+
+section("filters are AND; values inside one filter are OR; no filter means all")
+trial = Redliner(both, track_changes=False)
+trial.accept(kinds=["insert", "delete"], authors="In-House Counsel")
+print("  insert|delete AND by In-House Counsel ->", len(trial.summary()), "left")
+print("  rl.accept() with no filter is exactly rl.accept_all()")
+
+section("the same selection from the file helpers")
+accept_file(both, OUT / "10_partial.docx", kinds="format")
+print("  after accepting only formatting:", len(Redliner(OUT / "10_partial.docx").summary()))

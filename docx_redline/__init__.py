@@ -34,7 +34,16 @@ from .editing.paragraphs import (
     verify_plan,
 )
 from .editing.redline import Match, Redliner
-from .editing.review import Revision, RevisionSummary, accept_all, reject_all, summarize
+from .editing.review import (
+    Revision,
+    RevisionSummary,
+    accept,
+    accept_all,
+    make_selector,
+    reject,
+    reject_all,
+    summarize,
+)
 from .errors import ClauseError, RedlineError, StalePlanError
 from .oxml.diffing import TextOp, diff_ops
 from .oxml.revisions import Author, RevisionContext, RevisionIds
@@ -119,8 +128,11 @@ __all__ = [  # noqa: RUF022 -- grouped by layer, not alphabetically
     "compare_documents",
     "redline_files",
     "CompareStats",
+    "accept",
+    "reject",
     "accept_all",
     "reject_all",
+    "make_selector",
     "summarize",
     "Revision",
     "RevisionSummary",
@@ -136,15 +148,23 @@ __all__ = [  # noqa: RUF022 -- grouped by layer, not alphabetically
 __version__ = "1.0.2"
 
 
-def accept_file(source, output):
-    """Accept every tracked change in ``source`` and write ``output``."""
+def accept_file(source, output, ids=None, authors=None, kinds=None, where=None):
+    """Accept tracked changes in ``source`` and write ``output``.
+
+    With no filter every change is applied; ``ids`` / ``authors`` / ``kinds`` /
+    ``where`` narrow it exactly as :meth:`Redliner.accept` does.
+    """
     rl = Redliner(source, track_changes=False)
-    rl.accept_all()
+    rl.accept(ids=ids, authors=authors, kinds=kinds, where=where)
     return rl.save(output)
 
 
-def reject_file(source, output):
-    """Reject every tracked change in ``source`` and write ``output``."""
+def reject_file(source, output, ids=None, authors=None, kinds=None, where=None):
+    """Reject tracked changes in ``source`` and write ``output``.
+
+    With no filter every change is discarded; the filters match
+    :meth:`Redliner.reject`.
+    """
     rl = Redliner(source, track_changes=False)
-    rl.reject_all()
+    rl.reject(ids=ids, authors=authors, kinds=kinds, where=where)
     return rl.save(output)
