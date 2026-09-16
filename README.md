@@ -1232,9 +1232,9 @@ rl = Redliner("redlined.docx", track_changes=False)
 for rev in rl.summary().revisions:
     print(rev.id, rev.kind, rev.author, rev.text[:40])
 
-rl.accept(ids=["101", "102"])              # two revisions, by w:id
-rl.reject(authors="Opposing Counsel")      # everything one reviewer proposed
-rl.accept(kinds="format")                  # all the formatting-only changes
+rl.accept(ids=["101", "102"])  # two revisions, by w:id
+rl.reject(authors="Opposing Counsel")  # everything one reviewer proposed
+rl.accept(kinds="format")  # all the formatting-only changes
 rl.reject(where=lambda r: "indemnif" in r.text.lower())
 rl.save("partially-resolved.docx")
 ```
