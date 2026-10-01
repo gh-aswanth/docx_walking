@@ -57,7 +57,7 @@ jobs:
           echo "VERCEL_PROJECT_ID=$prj" >> "$GITHUB_ENV"
           echo "org id ${#org} chars, project id ${#prj} chars"
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
 
